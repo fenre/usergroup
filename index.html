@@ -3,148 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Terminal</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>Web Terminal - fenre/usergroup</title> <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         /* Basic Reset */
-        *, *::before, *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        html, body {
-            height: 100%;
-            background-color: #000000; /* Black background */
-            color: #ffffff; /* White text */
-            font-family: 'Roboto Mono', monospace;
-            font-size: 14px; /* Adjust as needed */
-            line-height: 1.4;
-        }
-
-        /* Terminal Container */
-        .terminal {
-            height: 100%;
-            padding: 15px;
-            overflow-y: auto; /* Enable scrolling */
-            cursor: text; /* Indicate text input area */
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Output Area */
-        #output {
-            flex-grow: 1; /* Take up available space */
-            white-space: pre-wrap; /* Preserve whitespace and wrap lines */
-            word-break: break-all; /* Break long words if necessary */
-        }
-
-        /* Input Line Container */
-        .input-line {
-            display: flex;
-            align-items: center;
-        }
-
-        /* Prompt Style */
-        .prompt {
-            /* color: #00ff00; /* Green prompt */
-            margin-right: 8px;
-            flex-shrink: 0;
-            white-space: nowrap;
-        }
-        .prompt-user { color: #00ff00; } /* Green user@host */
-        .prompt-colon { color: #ffffff; } /* White colon */
-        .prompt-path { color: #7aa2f7; } /* Blue path */
-        .prompt-dollar { color: #ffffff; } /* White $ */
-
-
-        /* Container for the visible input text and cursor */
-        .input-area-container {
-             position: relative; /* Needed for hidden input positioning */
-             flex-grow: 1;
-             display: flex; /* Use flex to keep parts together */
-             align-items: center;
-             min-width: 1px; /* Ensure it can shrink */
-             white-space: pre; /* Preserve spaces within the input spans */
-             flex-wrap: wrap; /* Allow wrapping for long inputs */
-        }
-
-        /* Spans for text before/after cursor */
-        #beforeCursor, #afterCursor {
-            display: inline; /* Keep text flowing */
-            outline: none;
-        }
-
-        /* Actual Hidden Input Field */
-        #commandInput {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0; /* Make it invisible */
-            cursor: text; /* Keep text cursor */
-            border: none;
-            background: transparent;
-            color: transparent; /* Hide typed text in the actual input */
-            caret-color: transparent; /* Hide the input's own caret */
-            padding: 0;
-            margin: 0;
-            font-family: inherit;
-            font-size: inherit;
-            line-height: inherit;
-            white-space: pre; /* Match wrapping behavior */
-        }
-
-        /* Blinking Cursor */
-        .cursor {
-            display: inline-block;
-            background-color: #ffffff; /* White cursor */
-            width: 8px; /* Width of the cursor block */
-            height: 1.4em; /* Match line height */
-            vertical-align: middle; /* Align with text */
-            animation: blink 1s step-end infinite;
-            order: 1; /* Ensure cursor is positioned correctly in flex layout */
-            flex-shrink: 0;
-        }
-        /* Hide cursor when input is not focused */
-        #commandInput:not(:focus) + .cursor {
-             animation: none; /* Stop blinking */
-             opacity: 0.5; /* Make it faint */
-        }
-
-        @keyframes blink {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0; }
-        }
-
-        /* Output formatting */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; background-color: #000000; color: #ffffff; font-family: 'Roboto Mono', monospace; font-size: 14px; line-height: 1.4; }
+        .terminal { height: 100%; padding: 15px; overflow-y: auto; cursor: text; display: flex; flex-direction: column; }
+        #output { flex-grow: 1; white-space: pre-wrap; word-break: break-all; }
+        .input-line { display: flex; align-items: center; }
+        .prompt { margin-right: 8px; flex-shrink: 0; white-space: nowrap; }
+        .prompt-user { color: #00ff00; }
+        .prompt-colon { color: #ffffff; }
+        .prompt-path { color: #7aa2f7; }
+        .prompt-dollar { color: #ffffff; }
+        .input-area-container { position: relative; flex-grow: 1; display: flex; align-items: center; min-width: 1px; white-space: pre; flex-wrap: wrap; }
+        #beforeCursor, #afterCursor { display: inline; outline: none; }
+        #commandInput { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: text; border: none; background: transparent; color: transparent; caret-color: transparent; padding: 0; margin: 0; font: inherit; white-space: pre; }
+        .cursor { display: inline-block; background-color: #ffffff; width: 8px; height: 1.4em; vertical-align: middle; animation: blink 1s step-end infinite; order: 1; flex-shrink: 0; }
+        #commandInput:not(:focus) + .cursor { animation: none; opacity: 0.5; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        /* Output Formatting */
         .output-command { color: #ffffff; }
-        .output-ls-dir { color: #7aa2f7; font-weight: bold; } /* Blue bold for directories */
-        .output-ls-file { color: #ffffff; } /* White for files */
-        .output-ls span { display: inline-block; margin-right: 15px; } /* Common spacing */
-        .output-error { color: #f7768e; } /* Red for errors */
-        .output-info { color: #e0af68; } /* Yellow/Orange for info */
-        .output-less-content {
-            color: #bb9af7; /* Purple for file content */
-            border-top: 1px dashed #414868; /* Separator line */
-            border-bottom: 1px dashed #414868; /* Separator line */
-            margin-top: 5px;
-            margin-bottom: 5px;
-            padding-top: 5px;
-            padding-bottom: 5px;
-            white-space: pre-wrap; /* Ensure content formatting is preserved */
-        }
-
+        .output-ls-dir { color: #7aa2f7; font-weight: bold; }
+        .output-ls-file { color: #ffffff; }
+        .output-ls span { display: inline-block; margin-right: 15px; }
+        .output-error { color: #f7768e; }
+        .output-info { color: #e0af68; }
+        .output-loading { color: #e0af68; font-style: italic; } /* Style for loading messages */
+        .output-less-content { color: #bb9af7; border-top: 1px dashed #414868; border-bottom: 1px dashed #414868; margin-top: 5px; margin-bottom: 5px; padding-top: 5px; padding-bottom: 5px; white-space: pre-wrap; }
     </style>
 </head>
 <body>
 
     <div id="terminal" class="terminal" onclick="focusInput()">
         <div id="output">
-            <div class="output-info">Welcome to the Oslo Splunk User Group Docs! Type 'help' for commands.</div>
+            <div class="output-info">Connecting to GitHub repo: fenre/usergroup... Type 'help' for commands.</div>
         </div>
         <div class="input-line">
             <span id="prompt" class="prompt"></span>
@@ -152,8 +47,7 @@
                 <span id="beforeCursor"></span>
                 <span class="cursor"></span>
                 <span id="afterCursor"></span>
-                <input type="text" id="commandInput" spellcheck="false" autocomplete="off" autocapitalize="none" autofocus>
-            </div>
+                <input type="text" id="commandInput" spellcheck="false" autocomplete="off" autocapitalize="none" autofocus disabled> </div>
         </div>
     </div>
 
@@ -167,371 +61,394 @@
         const cursorElement = document.querySelector('.cursor');
         const promptElement = document.getElementById('prompt');
 
-        // --- File System Simulation ---
-        // Represents the directory structure and file contents
-        const fileSystem = {
-            // Root directory '/'
-            'about.html': `<h1>About Us</h1>
-<p>This is the documentation page for the Oslo Splunk User Group.</p>
-<p>Navigate using 'cd', list files with 'ls', view content with 'less'.</p>`,
-            'contact.txt': `Contact Information:
---------------------
-Meetup Group: [Link to Meetup]
-Email: oslo-splunk-ug@example.com (replace)
-Organizers: [List Names]`,
-            'README2.md': `# Oslo Splunk User Group Docs
-
-Welcome! This page provides information and resources for the OSUG.
-
-Use the terminal interface to navigate:
-- \`ls\`: List files/directories in the current location.
-- \`cd <directory>\`: Change into a directory.
-- \`cd ..\`: Go up one directory.
-- \`less <filename>\`: View file content.
-- \`help\`: Show available commands.`,
-            'events': { // Directory 'events'
-                'type': 'directory', // Mark as directory
-                'past_meetups.md': `# Past Meetups
-- Q1 2025: Observability with Splunk
-- Q4 2024: Security Monitoring Techniques`,
-                'upcoming.txt': `Next Meetup: Q2 2025 - Splunk for Security
-Date: June 15, 2025
-Location: Online
-Details: [Link to details/RSVP]`
-            },
-            'resources': { // Directory 'resources'
-                'type': 'directory',
-                'splunk_links.txt': `Useful Splunk Links:
-- Splunk Docs: https://docs.splunk.com/
-- Splunk Community: https://community.splunk.com/
-- Splunkbase: https://splunkbase.splunk.com/`,
-                'presentations': { // Sub-directory 'presentations'
-                    'type': 'directory',
-                    'q1_2025_slides.pdf': '(Simulated PDF content - Q1 2025)' // File inside sub-directory
-                }
-            }
+        // --- GitHub API Configuration ---
+        const GITHUB_OWNER = 'fenre';
+        const GITHUB_REPO = 'usergroup';
+        const GITHUB_API_BASE = 'https://api.github.com';
+        // NOTE: No token included for public access. Add Authorization header if needed for private repos (requires secure handling).
+        const GITHUB_HEADERS = {
+            'Accept': 'application/vnd.github.v3+json',
+            // 'Authorization': 'token YOUR_GITHUB_TOKEN' // **NEVER hardcode tokens here for public sites!**
         };
 
         // --- State ---
         let currentPath = []; // Array representing the current directory path, starts at root []
+        let isReady = false; // Flag to indicate if the terminal is ready for input
 
         // --- Utility Functions ---
 
         /**
-         * Gets the current directory object from the file system based on currentPath.
-         * @returns {object} The current directory object.
+         * Constructs the API URL for repository contents.
+         * @returns {string} The GitHub API URL for the current path.
          */
-        function getCurrentDirectory() {
-            let currentLevel = fileSystem;
-            for (const dir of currentPath) {
-                // Navigate down the file system tree
-                if (currentLevel[dir] && typeof currentLevel[dir] === 'object' && currentLevel[dir].type === 'directory') {
-                    currentLevel = currentLevel[dir];
-                } else {
-                    // Safety check for invalid paths - should ideally not be reached
-                    console.error("Invalid path encountered:", currentPath);
-                    return fileSystem; // Fallback to root
-                }
-            }
-            return currentLevel;
+        function getApiUrlForCurrentPath() {
+            const pathString = currentPath.join('/');
+            return `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathString}`;
         }
 
         /**
-         * Gets the object (file or directory) at a specific name relative to the current directory.
-         * @param {string} name - The name of the file or directory.
-         * @returns {object|string|undefined} The file/directory object/content or undefined if not found.
+         * Fetches data from the GitHub API.
+         * @param {string} url - The API URL to fetch.
+         * @returns {Promise<any>} A promise that resolves with the JSON response or rejects on error.
          */
-        function getObjectAtPath(name) {
-            const currentDir = getCurrentDirectory();
-            return currentDir[name];
+        async function fetchFromGitHub(url) {
+            try {
+                const response = await fetch(url, { headers: GITHUB_HEADERS });
+                if (!response.ok) {
+                    // Handle specific errors like 404 or rate limiting
+                    if (response.status === 404) {
+                        throw new Error(`Not Found: ${url.replace(GITHUB_API_BASE,'')}`);
+                    } else if (response.status === 403) {
+                         const rateLimitInfo = `Rate limit: ${response.headers.get('X-RateLimit-Limit')}, Remaining: ${response.headers.get('X-RateLimit-Remaining')}`;
+                         console.warn('Rate limit likely exceeded.', await response.json());
+                         throw new Error(`API request forbidden (check rate limits or token permissions). ${rateLimitInfo}`);
+                    }
+                    throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                // Re-throw the error so command functions can handle it
+                throw error;
+            }
         }
+
 
         /**
          * Updates the command prompt display based on the current path.
          */
         function updatePrompt() {
-            // Construct path string (~ for root, ~/dir1/dir2 otherwise)
             const pathString = currentPath.length === 0 ? '~' : `~/${currentPath.join('/')}`;
-            // Use innerHTML to allow styled spans within the prompt
-            promptElement.innerHTML = `<span class="prompt-user">guest@splunk-UG</span><span class="prompt-colon">:</span><span class="prompt-path">${pathString}</span><span class="prompt-dollar">$</span>`;
+            promptElement.innerHTML = `<span class="prompt-user">guest@${GITHUB_REPO}</span><span class="prompt-colon">:</span><span class="prompt-path">${pathString}</span><span class="prompt-dollar">$</span>`;
         }
 
         // --- Core Terminal Functions ---
 
-        /**
-         * Focuses the hidden command input field.
-         */
         function focusInput() {
-            commandInput.focus();
-            updateInputArea(); // Ensure cursor position/visibility is updated
+            if (isReady) { // Only allow focus if ready
+                 commandInput.focus();
+            }
+            updateInputArea();
         }
 
-        /**
-         * Updates the visible input area (before/after cursor spans) based on the hidden input's value and caret position.
-         */
         function updateInputArea() {
             const value = commandInput.value;
-            const selectionStart = commandInput.selectionStart; // Caret position
-            // Update text before the cursor
+            const selectionStart = commandInput.selectionStart;
             beforeCursorSpan.textContent = value.substring(0, selectionStart);
-            // Update text after the cursor
             afterCursorSpan.textContent = value.substring(selectionStart);
-            // Scrolling is handled after command execution or potentially on input if needed
         }
 
-        /**
-         * Handles keydown events, primarily looking for the Enter key to process commands.
-         * @param {KeyboardEvent} event - The keydown event object.
-         */
         function handleKeyDown(event) {
+             if (!isReady) return; // Ignore input if not ready
             if (event.key === 'Enter') {
-                event.preventDefault(); // Prevent default newline insertion/form submission
-                processCommand();
+                event.preventDefault();
+                processCommand(); // Now async
             }
-            // Future enhancements: Handle ArrowUp/Down for history, Tab for autocomplete
         }
 
         /**
-         * Processes the command entered by the user.
+         * Processes the command entered by the user asynchronously.
          */
-         function processCommand() {
-            const fullCommand = commandInput.value.trim(); // Get and trim the command
+        async function processCommand() {
+            if (!isReady) return; // Should not happen if input is disabled, but safety check
 
-            // Construct the prompt string as it was when the command was entered for echoing
+            const fullCommand = commandInput.value.trim();
             const pathString = currentPath.length === 0 ? '~' : `~/${currentPath.join('/')}`;
-            const promptForEcho = `guest@splunk-UG:${pathString}$`;
-            // Echo the full command line to the output
+            const promptForEcho = `guest@${GITHUB_REPO}:${pathString}$`;
             appendOutput(`${promptForEcho} ${fullCommand}`, 'output-command');
 
-            // Proceed only if a command was actually entered
-            if (fullCommand) {
-                const args = fullCommand.split(' '); // Split command into parts
-                const command = args[0].toLowerCase(); // The command is the first part
+            // Disable input while processing
+            isReady = false;
+            commandInput.disabled = true;
+            setLoadingState(true); // Show loading cursor/indicator (optional)
 
-                // Check if the command exists in our command map
+            if (fullCommand) {
+                const args = fullCommand.split(' ');
+                const command = args[0].toLowerCase();
+
                 if (commands[command]) {
                     try {
-                        // Execute the corresponding command function, passing arguments
-                        commands[command](args.slice(1));
+                        // Await the async command function
+                        await commands[command](args.slice(1));
                     } catch (error) {
-                        // Basic error handling for command execution failures
-                        console.error("Command execution error:", error);
-                        appendOutput(`Error executing ${command}: ${error.message}`, 'output-error');
+                        // Handle errors thrown by command functions (e.g., API errors)
+                        appendOutput(`${error.message || 'Command failed'}`, 'output-error');
                     }
                 } else {
-                    // Command not found
                     appendOutput(`bash: command not found: ${command}`, 'output-error');
                 }
             }
 
-            // Reset for the next command
-            commandInput.value = ''; // Clear the hidden input
-            updateInputArea(); // Update the visible input display
-            updatePrompt(); // Update the prompt (important after 'cd')
-            scrollToBottom(); // Ensure the new prompt line is visible
+            // Re-enable input
+            commandInput.value = '';
+            updateInputArea();
+            updatePrompt();
+            isReady = true;
+            commandInput.disabled = false;
+            setLoadingState(false); // Hide loading state
+            scrollToBottom();
+            // Refocus after command execution might be needed depending on browser behavior
+            // requestAnimationFrame(focusInput); // Use rAF to focus after potential DOM updates
         }
 
         /**
-         * Appends a new line of text to the terminal output.
-         * @param {string} text - The text to append.
-         * @param {string} [className=''] - Optional CSS class(es) to apply to the new line.
+         * Sets a visual loading state (e.g., changing cursor style).
+         * @param {boolean} isLoading - Whether the terminal is loading data.
          */
+        function setLoadingState(isLoading) {
+             terminal.style.cursor = isLoading ? 'wait' : 'text';
+             // You could also add/remove a class to the body or terminal element
+             // to show a more prominent loading indicator if desired.
+        }
+
+
         function appendOutput(text, className = '') {
             const newLine = document.createElement('div');
             if (className) {
                 newLine.className = className;
             }
-            // Use textContent to prevent accidental HTML injection from file contents or command output
             newLine.textContent = text;
             outputDiv.appendChild(newLine);
         }
 
-        /**
-         * Scrolls the terminal view to the bottom, but only if the user is already near the bottom.
-         */
         function scrollToBottom() {
-            // Check if the user is scrolled near the bottom (within ~5px tolerance)
-            const isScrolledToBottom = terminal.scrollHeight - terminal.clientHeight <= terminal.scrollTop + 5;
+            const isScrolledToBottom = terminal.scrollHeight - terminal.clientHeight <= terminal.scrollTop + 10; // Increased tolerance
             if(isScrolledToBottom) {
-                 terminal.scrollTop = terminal.scrollHeight; // Auto-scroll
+                 terminal.scrollTop = terminal.scrollHeight;
             }
         }
 
-        // --- Command Implementations ---
+        // --- Command Implementations (Now Async) ---
 
         /**
-         * Implements the 'ls' command. Lists files and directories in the current directory.
+         * Implements the 'ls' command using GitHub API.
          */
-        function listFiles() {
-            const currentDir = getCurrentDirectory();
-            const lsOutputContainer = document.createElement('div');
-            lsOutputContainer.className = 'output-ls'; // Class for styling the ls output block
+        async function listFiles() {
+            const apiUrl = getApiUrlForCurrentPath();
+            appendOutput(`Fetching ${apiUrl.replace(GITHUB_API_BASE,'')}...`, 'output-loading'); // Loading message
+            try {
+                const data = await fetchFromGitHub(apiUrl);
 
-            // Get items, excluding the internal 'type' marker for directories
-            const items = Object.keys(currentDir).filter(key => key !== 'type');
-
-            // If directory is empty, do nothing (or optionally show a message)
-            if (items.length === 0) {
-                return;
-            }
-
-            // Sort items alphabetically for consistent listing
-            items.sort();
-
-            // Create spans for each item with appropriate styling
-            items.forEach(item => {
-                const itemSpan = document.createElement('span');
-                const obj = currentDir[item];
-                // Check if the item is a directory
-                if (typeof obj === 'object' && obj.type === 'directory') {
-                    itemSpan.className = 'output-ls-dir'; // Directory style
-                    itemSpan.textContent = item + '/'; // Append slash for directories
-                } else {
-                    itemSpan.className = 'output-ls-file'; // File style
-                    itemSpan.textContent = item;
+                if (!Array.isArray(data)) {
+                     appendOutput('Error: Expected directory listing but received unexpected data.', 'output-error');
+                     console.error("Unexpected data format for ls:", data);
+                     return;
                 }
-                lsOutputContainer.appendChild(itemSpan);
-            });
-            outputDiv.appendChild(lsOutputContainer); // Add the formatted list to the output
+
+                if (data.length === 0) {
+                    return; // Empty directory, no output needed
+                }
+
+                const lsOutputContainer = document.createElement('div');
+                lsOutputContainer.className = 'output-ls';
+
+                // Sort items: directories first, then files, alphabetically
+                 data.sort((a, b) => {
+                    if (a.type === b.type) {
+                        return a.name.localeCompare(b.name); // Sort alphabetically if same type
+                    }
+                    return a.type === 'dir' ? -1 : 1; // Directories first
+                 });
+
+
+                data.forEach(item => {
+                    const itemSpan = document.createElement('span');
+                    if (item.type === 'dir') {
+                        itemSpan.className = 'output-ls-dir';
+                        itemSpan.textContent = item.name + '/';
+                    } else if (item.type === 'file') {
+                        itemSpan.className = 'output-ls-file';
+                        itemSpan.textContent = item.name;
+                    } else {
+                        // Handle other types like symlinks if necessary
+                        itemSpan.textContent = item.name + ` (${item.type})`;
+                    }
+                    lsOutputContainer.appendChild(itemSpan);
+                });
+                outputDiv.appendChild(lsOutputContainer);
+
+            } catch (error) {
+                // Error already logged by fetchFromGitHub, just display message
+                appendOutput(`ls: ${error.message}`, 'output-error');
+            } finally {
+                 // Remove loading message? Optional. Could find and remove the specific loading div.
+            }
         }
 
         /**
-         * Implements the 'cd' command. Changes the current working directory.
-         * @param {string[]} args - Arguments passed to the cd command (expecting zero or one).
+         * Implements the 'cd' command using GitHub API for validation.
          */
-        function changeDirectory(args) {
-            const target = args[0] || ''; // Target directory name, '..', or empty for home/root
+        async function changeDirectory(args) {
+            const target = args[0] || '';
 
-            // Handle 'cd' or 'cd ~' to go to root
             if (target === '' || target === '~') {
-                currentPath = []; // Reset path to root
-                return; // No further action needed
+                currentPath = [];
+                return; // Success, no API call needed
             }
 
-            // Handle 'cd ..' to go up one directory
             if (target === '..') {
                 if (currentPath.length > 0) {
-                    currentPath.pop(); // Remove the last element from the path array
-                } // If already at root, do nothing
-                return; // No further action needed
+                    currentPath.pop();
+                }
+                return; // Success, no API call needed
             }
 
-            // Handle 'cd .' to stay in the current directory (no-op)
             if (target === '.') {
-                return;
+                return; // Success, no-op
             }
 
-            // Handle changing into a specific subdirectory
-            const currentDir = getCurrentDirectory();
-            const targetDir = currentDir[target]; // Get the target object
+             if (target.includes('/')) {
+                 appendOutput(`cd: Invalid directory name '${target}'`, 'output-error');
+                 return;
+             }
 
-            if (targetDir && typeof targetDir === 'object' && targetDir.type === 'directory') {
-                // If it exists and is a directory, add it to the path
-                currentPath.push(target);
-            } else if (targetDir) {
-                // If it exists but isn't a directory
-                appendOutput(`bash: cd: ${target}: Not a directory`, 'output-error');
-            } else {
-                // If it doesn't exist
-                appendOutput(`bash: cd: ${target}: No such file or directory`, 'output-error');
+            // Check if target exists and is a directory via API
+            const targetPath = [...currentPath, target].join('/');
+            const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${targetPath}`;
+            appendOutput(`Checking path ${targetPath}...`, 'output-loading');
+
+            try {
+                // We fetch the target path. If it's a directory, the API returns an array (its contents).
+                // If it's a file, it returns an object. If it doesn't exist, it throws 404.
+                const data = await fetchFromGitHub(apiUrl);
+
+                if (Array.isArray(data)) {
+                    // It's a directory, success! Update the path.
+                    currentPath.push(target);
+                } else if (typeof data === 'object' && data.type === 'file') {
+                    // It's a file, not a directory
+                    appendOutput(`bash: cd: ${target}: Not a directory`, 'output-error');
+                } else {
+                     // Unexpected response type
+                     appendOutput(`bash: cd: ${target}: Not a directory or unable to access`, 'output-error');
+                     console.warn("Unexpected response for cd target:", data);
+                }
+            } catch (error) {
+                 // Handle errors (like 404 Not Found)
+                 if (error.message.includes('Not Found')) {
+                     appendOutput(`bash: cd: ${target}: No such file or directory`, 'output-error');
+                 } else {
+                      appendOutput(`cd: ${error.message}`, 'output-error'); // Display other API errors
+                 }
             }
-            // Prompt update happens automatically after command execution
         }
 
 
         /**
-         * Implements the 'less' command. Displays the content of a specified file.
-         * @param {string[]} args - Arguments passed to the less command (expecting one filename).
+         * Implements the 'less' command using GitHub API.
          */
-        function showFileContent(args) {
-            const filename = args[0]; // Get the filename argument
+        async function showFileContent(args) {
+            const filename = args[0];
 
-            // Check if filename was provided
             if (!filename) {
                 appendOutput('less: missing filename', 'output-error');
                 return;
             }
-            // Basic validation: prevent path traversal attempts in filename
             if (filename.includes('/') || filename === '..' || filename === '.') {
                  appendOutput(`less: Invalid filename '${filename}'`, 'output-error');
                  return;
             }
 
-            // Get the object (file or directory) from the current directory
-            const targetObject = getObjectAtPath(filename);
+            const targetPath = [...currentPath, filename].join('/');
+            const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${targetPath}`;
+            appendOutput(`Fetching ${filename}...`, 'output-loading');
 
-            if (targetObject) {
-                // Check if it's a directory
-                if (typeof targetObject === 'object' && targetObject.type === 'directory') {
-                    appendOutput(`less: ${filename}: Is a directory`, 'output-error');
-                }
-                // Check if it's a string (our representation of file content)
-                else if (typeof targetObject === 'string') {
-                    // Display the file content with specific styling
-                    appendOutput(targetObject, 'output-less-content');
+            try {
+                const data = await fetchFromGitHub(apiUrl);
+
+                if (typeof data === 'object' && data.type === 'file') {
+                    if (data.encoding !== 'base64') {
+                         appendOutput(`less: Unsupported file encoding: ${data.encoding || 'unknown'}`, 'output-error');
+                         return;
+                    }
+                    // Decode base64 content
+                    const decodedContent = atob(data.content);
+                    appendOutput(decodedContent, 'output-less-content');
+                } else if (Array.isArray(data) || (typeof data === 'object' && data.type === 'dir')) {
+                     appendOutput(`less: ${filename}: Is a directory`, 'output-error');
                 } else {
-                    // Should not happen with current structure, but catch unexpected types
-                     appendOutput(`less: cannot view contents of '${filename}'`, 'output-error');
+                     appendOutput(`less: Error reading ${filename}: Unexpected API response`, 'output-error');
+                     console.warn("Unexpected response for less target:", data);
                 }
-            } else {
-                // File not found in the current directory
-                appendOutput(`less: ${filename}: No such file or directory`, 'output-error');
+
+            } catch (error) {
+                 if (error.message.includes('Not Found')) {
+                     appendOutput(`less: ${filename}: No such file or directory`, 'output-error');
+                 } else {
+                      appendOutput(`less: ${error.message}`, 'output-error');
+                 }
             }
         }
 
         /**
-         * Implements the 'help' command. Displays a list of available commands.
+         * Implements the 'help' command.
          */
-        function showHelp() {
+        function showHelp() { // This command doesn't need to be async
             appendOutput('Available commands:', 'output-info');
-            appendOutput(`  ls              List files and directories`);
+            appendOutput(`  ls              List files and directories in current path`);
             appendOutput(`  cd <dir>        Change directory (use '..' to go up, empty or '~' to go home)`);
             appendOutput(`  less <filename> View file content`);
             appendOutput(`  help            Show this help message`);
             appendOutput(`  clear           Clear the terminal screen`);
             appendOutput(`  date            Show the current date and time`);
-            appendOutput("Use arrow keys to move cursor (basic).", 'output-info');
+            appendOutput(`Connected to GitHub repo: ${GITHUB_OWNER}/${GITHUB_REPO}`, 'output-info');
         }
 
         /**
-         * Implements the 'clear' command. Clears the terminal output area.
+         * Implements the 'clear' command.
          */
-        function clearScreen() {
-            outputDiv.innerHTML = ''; // Remove all child elements from output
+        function clearScreen() { // No need to be async
+            outputDiv.innerHTML = '';
         }
 
         /**
-         * Implements the 'date' command. Displays the current date and time.
+         * Implements the 'date' command.
          */
-        function showDate() {
+        function showDate() { // No need to be async
             appendOutput(new Date().toString());
         }
 
         // --- Command Map ---
-        // Maps command strings to their corresponding implementation functions
         const commands = {
-            'ls': listFiles,
-            'cd': changeDirectory,
-            'less': showFileContent,
-            'help': showHelp,
-            'clear': clearScreen,
-            'date': showDate,
+            'ls': listFiles, // async
+            'cd': changeDirectory, // async
+            'less': showFileContent, // async
+            'help': showHelp, // sync
+            'clear': clearScreen, // sync
+            'date': showDate, // sync
         };
 
 
         // --- Initial Setup ---
-        updatePrompt(); // Display the initial prompt
-        updateInputArea(); // Set initial cursor position display
-        focusInput(); // Focus the input field on load
+        async function initializeTerminal() {
+            updatePrompt();
+            updateInputArea();
+            // Optional: Perform an initial 'ls' or check root access
+            try {
+                // Test connection by fetching root
+                await fetchFromGitHub(getApiUrlForCurrentPath());
+                appendOutput(`Successfully connected to ${GITHUB_OWNER}/${GITHUB_REPO}.`, 'output-info');
+                isReady = true;
+                commandInput.disabled = false;
+                focusInput();
+            } catch (error) {
+                 appendOutput(`Error connecting to repository: ${error.message}`, 'output-error');
+                 appendOutput('Please check repository details and network connection.', 'output-error');
+                 // Keep input disabled if connection fails
+            }
+        }
 
-        // --- Event Listeners --- (Setup after functions are defined)
-        terminal.addEventListener('click', focusInput); // Focus input on terminal click
-        commandInput.addEventListener('keydown', handleKeyDown); // Handle Enter key
-        commandInput.addEventListener('input', updateInputArea); // Update display on typing
-        commandInput.addEventListener('keyup', updateInputArea); // Update display on arrow keys, etc.
-        commandInput.addEventListener('mouseup', updateInputArea); // Update display on mouse selection change
-        commandInput.addEventListener('focus', updateInputArea); // Update cursor on focus
-        commandInput.addEventListener('blur', updateInputArea); // Update cursor on blur
+        // Add event listeners
+        terminal.addEventListener('click', focusInput);
+        commandInput.addEventListener('keydown', handleKeyDown);
+        commandInput.addEventListener('input', updateInputArea);
+        commandInput.addEventListener('keyup', updateInputArea);
+        commandInput.addEventListener('mouseup', updateInputArea);
+        commandInput.addEventListener('focus', updateInputArea);
+        commandInput.addEventListener('blur', updateInputArea);
+
+        // Start the initialization
+        initializeTerminal();
 
     </script>
 
