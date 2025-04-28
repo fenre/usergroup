@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Oslo Splunk User Group</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              // Set 'Roboto Mono' as the default monospace font
+              mono: ['Roboto Mono', 'monospace'],
+            },
+            colors: {
+              // Terminal-like color palette
+              'terminal-bg': '#1a1b26', // Dark background
+              'terminal-bg-secondary': '#24283b', // Slightly lighter background
+              'terminal-fg': '#a9b1d6', // Default foreground text
+              'terminal-green': '#7fbc4f', // Main green accent (darker shade)
+              'terminal-green-darker': '#6aa84f', // Darker green for hover
+              'terminal-border': '#414868', // Border color
+              'terminal-link': '#7aa2f7', // Link color
+              'terminal-link-hover': '#a0c9ff', // Link hover color
+            }
+          }
+        }
+      }
+    </script>
+
+    <style>
+      body {
+        font-family: 'Roboto Mono', monospace;
+        /* Improves font rendering */
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+      }
+      /* Optional: Blinking cursor effect - uncomment and apply class 'blinking-cursor' to an element */
+      /*
+      .blinking-cursor::after {
+        content: '_';
+        display: inline-block;
+        vertical-align: bottom;
+        animation: blink 1s step-end infinite;
+      }
+      @keyframes blink {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0; }
+      }
+      */
+    </style>
+</head>
+<body class="bg-terminal-bg font-mono text-terminal-fg leading-normal tracking-normal">
+
+    <header class="bg-terminal-bg-secondary border-b border-terminal-border sticky top-0 z-10"> <nav class="container mx-auto px-6 py-4 flex justify-between items-center relative"> <div class="flex-shrink-0"> <a href="#" class="flex items-center space-x-2 text-xl font-bold text-terminal-green hover:text-terminal-green-darker transition-colors duration-200">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                      <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd" />
+                    </svg>
+                    <span class="whitespace-nowrap">Oslo Splunk UG</span> </a>
+            </div>
+
+            <div class="hidden md:flex items-center space-x-6">
+                <a href="#about" class="text-terminal-fg hover:text-terminal-link transition-colors duration-200">About</a>
+                <a href="#events" class="text-terminal-fg hover:text-terminal-link transition-colors duration-200">Events</a>
+                <a href="#resources" class="text-terminal-fg hover:text-terminal-link transition-colors duration-200">Resources</a>
+                <a href="#contact" class="text-terminal-fg hover:text-terminal-link transition-colors duration-200">Contact</a>
+            </div>
+
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-terminal-fg hover:text-terminal-link focus:outline-none focus:ring-2 focus:ring-terminal-link rounded" aria-label="Open main menu" aria-expanded="false" aria-controls="mobile-menu">
+                    <svg class="h-6 w-6" fill="none" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                        <path d="M4 6h16M4 12h16m-7 6h7"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <div id="mobile-menu" class="md:hidden absolute top-full left-0 w-full bg-terminal-bg-secondary border-b border-terminal-border shadow-md hidden">
+                <div class="px-4 pt-2 pb-4 space-y-2">
+                    <a href="#about" class="block text-terminal-fg hover:text-terminal-link transition-colors duration-200 py-1">About</a>
+                    <a href="#events" class="block text-terminal-fg hover:text-terminal-link transition-colors duration-200 py-1">Events</a>
+                    <a href="#resources" class="block text-terminal-fg hover:text-terminal-link transition-colors duration-200 py-1">Resources</a>
+                    <a href="#contact" class="block text-terminal-fg hover:text-terminal-link transition-colors duration-200 py-1">Contact</a>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto px-6 py-12">
+
+        <section id="hero" aria-labelledby="hero-heading" class="text-center py-16 bg-terminal-bg-secondary text-terminal-fg rounded-lg border border-terminal-border mb-16 overflow-hidden"> <h1 id="hero-heading" class="text-3xl md:text-4xl font-bold mb-4 text-terminal-green px-4">Welcome to the Oslo Splunk User Group!</h1>
+            <p class="text-lg md:text-xl mb-8 text-terminal-fg px-4">Connecting Splunk users, developers, and sysadmins in the Oslo area.</p>
+            <a href="#events" class="inline-block bg-terminal-green text-terminal-bg font-semibold py-2 px-6 rounded hover:bg-terminal-green-darker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-terminal-bg-secondary focus:ring-terminal-green transition duration-300 ease-in-out">
+                Upcoming Events
+            </a>
+        </section>
+
+        <section id="about" aria-labelledby="about-heading" class="mb-16 p-8 bg-terminal-bg-secondary rounded-lg border border-terminal-border">
+            <h2 id="about-heading" class="text-2xl font-bold text-terminal-green mb-6 text-center md:text-left">About Us</h2>
+            <div class="text-center md:text-left space-y-4"> <p>
+                    The Oslo Splunk User Group (OSUG) is a community for professionals and enthusiasts using Splunk for observability, security, IT operations, and more. We aim to share knowledge, best practices, and experiences.
+                </p>
+                <p>
+                    Whether you're a seasoned Splunk architect, a developer instrumenting applications, or a sysadmin managing infrastructure, join us for meetups, presentations, and discussions.
+                </p>
+                </div>
+        </section>
+
+        <section id="events" aria-labelledby="events-heading" class="mb-16">
+            <h2 id="events-heading" class="text-2xl font-bold text-terminal-green mb-8 text-center">Past & Upcoming Events</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-terminal-bg-secondary rounded-lg border border-terminal-border overflow-hidden flex flex-col"> <div class="p-6 flex-grow"> <h3 class="text-xl font-semibold mb-2 text-terminal-green">Q2 Meetup: Splunk for Security</h3>
+                        <p class="text-sm text-terminal-fg mb-2">Date: June 15, 2025 | Location: Online</p> <p class="text-terminal-fg mb-4">Join us for talks on using Splunk for threat detection and incident response. Featuring guest speakers from [Company].</p> </div>
+                    <div class="p-6 pt-0"> <a href="#" class="text-terminal-link hover:underline font-medium">RSVP / Details</a> </div>
+                </div>
+
+                <div class="bg-terminal-bg-secondary rounded-lg border border-terminal-border overflow-hidden opacity-75 flex flex-col"> <div class="p-6 flex-grow"> <h3 class="text-xl font-semibold mb-2 text-terminal-green">Q1 Meetup: Observability with Splunk</h3>
+                         <p class="text-sm text-terminal-fg mb-2">Date: March 10, 2025 | Location: [Venue Name]</p> <p class="text-terminal-fg mb-4">Recap of our first meetup focusing on application monitoring and APM.</p> </div>
+                     <div class="p-6 pt-0"> <a href="#" class="text-terminal-link hover:underline font-medium">Slides/Recording</a> </div>
+                </div>
+                </div>
+        </section>
+
+         <section id="resources" aria-labelledby="resources-heading" class="mb-16">
+            <h2 id="resources-heading" class="text-2xl font-bold text-terminal-green mb-8 text-center">Resources</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"> <div class="bg-terminal-bg-secondary rounded-lg border border-terminal-border p-6 text-center">
+                    <h3 class="text-xl font-semibold mb-2 text-terminal-green">Splunk Docs</h3>
+                    <p class="text-terminal-fg mb-4">Official Splunk documentation.</p>
+                    <a href="https://docs.splunk.com/" target="_blank" rel="noopener noreferrer" class="text-terminal-link hover:underline font-medium">Visit Site</a>
+                </div>
+                 <div class="bg-terminal-bg-secondary rounded-lg border border-terminal-border p-6 text-center">
+                    <h3 class="text-xl font-semibold mb-2 text-terminal-green">Splunk Community</h3>
+                    <p class="text-terminal-fg mb-4">Forums and answers.</p>
+                    <a href="https://community.splunk.com/" target="_blank" rel="noopener noreferrer" class="text-terminal-link hover:underline font-medium">Visit Site</a>
+                </div>
+                 <div class="bg-terminal-bg-secondary rounded-lg border border-terminal-border p-6 text-center">
+                    <h3 class="text-xl font-semibold mb-2 text-terminal-green">Splunkbase Apps</h3>
+                    <p class="text-terminal-fg mb-4">Explore Splunk apps.</p>
+                    <a href="https://splunkbase.splunk.com/" target="_blank" rel="noopener noreferrer" class="text-terminal-link hover:underline font-medium">Visit Site</a>
+                </div>
+                 </div>
+        </section>
+
+        <section id="contact" aria-labelledby="contact-heading" class="text-center py-12 bg-terminal-bg-secondary rounded-lg border border-terminal-border">
+             <h2 id="contact-heading" class="text-2xl font-bold text-terminal-green mb-6">Get Involved</h2>
+             <p class="text-terminal-fg mb-8 max-w-xl mx-auto px-4"> Want to present at a future meetup, suggest a topic, or join the conversation? Reach out!
+             </p>
+             <div class="space-y-4 sm:space-y-0 sm:space-x-4"> <a href="#" class="inline-block bg-terminal-green text-terminal-bg font-semibold py-2 px-6 rounded hover:bg-terminal-green-darker focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-terminal-bg-secondary focus:ring-terminal-green transition duration-300 ease-in-out">
+                     Join our Meetup Group
+                 </a>
+                 <a href="mailto:oslo-splunk-ug@example.com" class="inline-block border border-terminal-green text-terminal-green font-semibold py-2 px-6 rounded hover:bg-terminal-green hover:text-terminal-bg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-terminal-bg-secondary focus:ring-terminal-green transition duration-300 ease-in-out"> Email Us
+                 </a>
+             </div>
+             <div class="mt-8 flex justify-center space-x-6">
+                 <a href="#" title="GitHub Repository" aria-label="GitHub Repository" class="text-terminal-fg hover:text-terminal-link transition-colors duration-200">
+                     <svg class="h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true"><path fill-rule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.026 2.747-1.026.546 1.379.201 2.397.098 2.65.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" clip-rule="evenodd"/></svg>
+                 </a>
+                 </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-terminal-bg-secondary border-t border-terminal-border text-terminal-fg py-6 mt-12">
+        <div class="container mx-auto px-6 text-center text-sm">
+            <p>&copy; <span id="current-year"></span> Oslo Splunk User Group.</p>
+            <p class="mt-1">Hosted on <a href="https://pages.github.com/" target="_blank" rel="noopener noreferrer" class="text-terminal-link hover:underline">GitHub Pages</a>.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Set current year in footer
+        document.getElementById('current-year').textContent = new Date().getFullYear();
+
+        // --- Mobile Menu Toggle ---
+        // This is a basic example. For production, consider edge cases,
+        // accessibility improvements (e.g., focus trapping), and potentially
+        // a more robust UI library if needed.
+        const menuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+
+        if (menuButton && mobileMenu) {
+          menuButton.addEventListener('click', () => {
+            const isExpanded = menuButton.getAttribute('aria-expanded') === 'true';
+            menuButton.setAttribute('aria-expanded', !isExpanded);
+            mobileMenu.classList.toggle('hidden');
+            // Optional: Change button icon based on state (e.g., hamburger to X)
+            // const icon = menuButton.querySelector('svg');
+            // if (!isExpanded) { icon.innerHTML = '<path d="M6 18L18 6M6 6l12 12"></path>'; }
+            // else { icon.innerHTML = '<path d="M4 6h16M4 12h16m-7 6h7"></path>'; }
+          });
+
+          // Optional: Close menu when a link inside it is clicked
+          mobileMenu.addEventListener('click', (event) => {
+            if (event.target.tagName === 'A') {
+              menuButton.setAttribute('aria-expanded', 'false');
+              mobileMenu.classList.add('hidden');
+            }
+          });
+
+          // Optional: Close menu when clicking outside of it
+          document.addEventListener('click', (event) => {
+            if (!menuButton.contains(event.target) && !mobileMenu.contains(event.target) && menuButton.getAttribute('aria-expanded') === 'true') {
+              menuButton.setAttribute('aria-expanded', 'false');
+              mobileMenu.classList.add('hidden');
+            }
+          });
+        } else {
+            console.warn("Mobile menu button or menu element not found.");
+        }
+
+    </script>
+
+</body>
+</html>
