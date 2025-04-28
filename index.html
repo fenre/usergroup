@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Web Terminal - fenre/usergroup</title> <link rel="preconnect" href="https://fonts.googleapis.com">
+    <title>Web Terminal - fenre/usergroup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -31,7 +32,7 @@
         .output-ls span { display: inline-block; margin-right: 15px; }
         .output-error { color: #f7768e; }
         .output-info { color: #e0af68; }
-        .output-loading { color: #e0af68; font-style: italic; } /* Style for loading messages */
+        .output-loading { color: #e0af68; font-style: italic; }
         .output-less-content { color: #bb9af7; border-top: 1px dashed #414868; border-bottom: 1px dashed #414868; margin-top: 5px; margin-bottom: 5px; padding-top: 5px; padding-bottom: 5px; white-space: pre-wrap; }
     </style>
 </head>
@@ -47,7 +48,8 @@
                 <span id="beforeCursor"></span>
                 <span class="cursor"></span>
                 <span id="afterCursor"></span>
-                <input type="text" id="commandInput" spellcheck="false" autocomplete="off" autocapitalize="none" autofocus disabled> </div>
+                <input type="text" id="commandInput" spellcheck="false" autocomplete="off" autocapitalize="none" autofocus disabled>
+            </div>
         </div>
     </div>
 
@@ -65,37 +67,25 @@
         const GITHUB_OWNER = 'fenre';
         const GITHUB_REPO = 'usergroup';
         const GITHUB_API_BASE = 'https://api.github.com';
-        // NOTE: No token included for public access. Add Authorization header if needed for private repos (requires secure handling).
         const GITHUB_HEADERS = {
             'Accept': 'application/vnd.github.v3+json',
-            // 'Authorization': 'token YOUR_GITHUB_TOKEN' // **NEVER hardcode tokens here for public sites!**
         };
 
         // --- State ---
-        let currentPath = []; // Array representing the current directory path, starts at root []
-        let isReady = false; // Flag to indicate if the terminal is ready for input
+        let currentPath = [];
+        let isReady = false;
 
         // --- Utility Functions ---
 
-        /**
-         * Constructs the API URL for repository contents.
-         * @returns {string} The GitHub API URL for the current path.
-         */
         function getApiUrlForCurrentPath() {
             const pathString = currentPath.join('/');
             return `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathString}`;
         }
 
-        /**
-         * Fetches data from the GitHub API.
-         * @param {string} url - The API URL to fetch.
-         * @returns {Promise<any>} A promise that resolves with the JSON response or rejects on error.
-         */
         async function fetchFromGitHub(url) {
             try {
                 const response = await fetch(url, { headers: GITHUB_HEADERS });
                 if (!response.ok) {
-                    // Handle specific errors like 404 or rate limiting
                     if (response.status === 404) {
                         throw new Error(`Not Found: ${url.replace(GITHUB_API_BASE,'')}`);
                     } else if (response.status === 403) {
@@ -108,15 +98,10 @@
                 return await response.json();
             } catch (error) {
                 console.error('Fetch error:', error);
-                // Re-throw the error so command functions can handle it
                 throw error;
             }
         }
 
-
-        /**
-         * Updates the command prompt display based on the current path.
-         */
         function updatePrompt() {
             const pathString = currentPath.length === 0 ? '~' : `~/${currentPath.join('/')}`;
             promptElement.innerHTML = `<span class="prompt-user">guest@${GITHUB_REPO}</span><span class="prompt-colon">:</span><span class="prompt-path">${pathString}</span><span class="prompt-dollar">$</span>`;
@@ -125,9 +110,10 @@
         // --- Core Terminal Functions ---
 
         function focusInput() {
-            if (isReady) { // Only allow focus if ready
+            if (isReady) {
                  commandInput.focus();
             }
+            // Call updateInputArea to ensure cursor visibility/position is correct on focus
             updateInputArea();
         }
 
@@ -136,21 +122,19 @@
             const selectionStart = commandInput.selectionStart;
             beforeCursorSpan.textContent = value.substring(0, selectionStart);
             afterCursorSpan.textContent = value.substring(selectionStart);
+            // No need to scroll here, scroll after output/command processing
         }
 
         function handleKeyDown(event) {
-             if (!isReady) return; // Ignore input if not ready
+             if (!isReady) return;
             if (event.key === 'Enter') {
                 event.preventDefault();
-                processCommand(); // Now async
+                processCommand();
             }
         }
 
-        /**
-         * Processes the command entered by the user asynchronously.
-         */
         async function processCommand() {
-            if (!isReady) return; // Should not happen if input is disabled, but safety check
+            if (!isReady) return;
 
             const fullCommand = commandInput.value.trim();
             const pathString = currentPath.length === 0 ? '~' : `~/${currentPath.join('/')}`;
@@ -160,7 +144,7 @@
             // Disable input while processing
             isReady = false;
             commandInput.disabled = true;
-            setLoadingState(true); // Show loading cursor/indicator (optional)
+            setLoadingState(true);
 
             if (fullCommand) {
                 const args = fullCommand.split(' ');
@@ -168,10 +152,8 @@
 
                 if (commands[command]) {
                     try {
-                        // Await the async command function
                         await commands[command](args.slice(1));
                     } catch (error) {
-                        // Handle errors thrown by command functions (e.g., API errors)
                         appendOutput(`${error.message || 'Command failed'}`, 'output-error');
                     }
                 } else {
@@ -179,28 +161,25 @@
                 }
             }
 
-            // Re-enable input
+            // Re-enable input and cleanup
             commandInput.value = '';
-            updateInputArea();
-            updatePrompt();
+            updateInputArea(); // Clear visual input
+            updatePrompt(); // Update prompt if cd was used
             isReady = true;
             commandInput.disabled = false;
-            setLoadingState(false); // Hide loading state
+            setLoadingState(false);
             scrollToBottom();
-            // Refocus after command execution might be needed depending on browser behavior
-            // requestAnimationFrame(focusInput); // Use rAF to focus after potential DOM updates
+
+            // *** ADDED: Explicitly refocus the input field ***
+            // Use requestAnimationFrame to ensure focus happens after potential DOM updates
+            requestAnimationFrame(() => {
+                focusInput();
+            });
         }
 
-        /**
-         * Sets a visual loading state (e.g., changing cursor style).
-         * @param {boolean} isLoading - Whether the terminal is loading data.
-         */
         function setLoadingState(isLoading) {
              terminal.style.cursor = isLoading ? 'wait' : 'text';
-             // You could also add/remove a class to the body or terminal element
-             // to show a more prominent loading indicator if desired.
         }
-
 
         function appendOutput(text, className = '') {
             const newLine = document.createElement('div');
@@ -212,45 +191,33 @@
         }
 
         function scrollToBottom() {
-            const isScrolledToBottom = terminal.scrollHeight - terminal.clientHeight <= terminal.scrollTop + 10; // Increased tolerance
+            // Only scroll if the user is near the bottom
+            const isScrolledToBottom = terminal.scrollHeight - terminal.clientHeight <= terminal.scrollTop + 15; // Increased tolerance slightly
             if(isScrolledToBottom) {
                  terminal.scrollTop = terminal.scrollHeight;
             }
         }
 
-        // --- Command Implementations (Now Async) ---
+        // --- Command Implementations (Async where needed) ---
 
-        /**
-         * Implements the 'ls' command using GitHub API.
-         */
         async function listFiles() {
             const apiUrl = getApiUrlForCurrentPath();
-            appendOutput(`Fetching ${apiUrl.replace(GITHUB_API_BASE,'')}...`, 'output-loading'); // Loading message
+            // Find and remove previous loading messages for 'ls' if any (optional enhancement)
+            // appendOutput(`Fetching ${apiUrl.replace(GITHUB_API_BASE,'')}...`, 'output-loading');
             try {
                 const data = await fetchFromGitHub(apiUrl);
-
                 if (!Array.isArray(data)) {
-                     appendOutput('Error: Expected directory listing but received unexpected data.', 'output-error');
-                     console.error("Unexpected data format for ls:", data);
+                     appendOutput('Error: Expected directory listing.', 'output-error');
                      return;
                 }
-
-                if (data.length === 0) {
-                    return; // Empty directory, no output needed
-                }
+                if (data.length === 0) return; // Empty dir
 
                 const lsOutputContainer = document.createElement('div');
                 lsOutputContainer.className = 'output-ls';
-
-                // Sort items: directories first, then files, alphabetically
                  data.sort((a, b) => {
-                    if (a.type === b.type) {
-                        return a.name.localeCompare(b.name); // Sort alphabetically if same type
-                    }
-                    return a.type === 'dir' ? -1 : 1; // Directories first
+                    if (a.type === b.type) return a.name.localeCompare(b.name);
+                    return a.type === 'dir' ? -1 : 1;
                  });
-
-
                 data.forEach(item => {
                     const itemSpan = document.createElement('span');
                     if (item.type === 'dir') {
@@ -260,117 +227,67 @@
                         itemSpan.className = 'output-ls-file';
                         itemSpan.textContent = item.name;
                     } else {
-                        // Handle other types like symlinks if necessary
                         itemSpan.textContent = item.name + ` (${item.type})`;
                     }
                     lsOutputContainer.appendChild(itemSpan);
                 });
                 outputDiv.appendChild(lsOutputContainer);
-
             } catch (error) {
-                // Error already logged by fetchFromGitHub, just display message
                 appendOutput(`ls: ${error.message}`, 'output-error');
-            } finally {
-                 // Remove loading message? Optional. Could find and remove the specific loading div.
             }
         }
 
-        /**
-         * Implements the 'cd' command using GitHub API for validation.
-         */
         async function changeDirectory(args) {
             const target = args[0] || '';
+            if (target === '' || target === '~') { currentPath = []; return; }
+            if (target === '..') { if (currentPath.length > 0) currentPath.pop(); return; }
+            if (target === '.') { return; }
+            if (target.includes('/')) { appendOutput(`cd: Invalid directory name '${target}'`, 'output-error'); return; }
 
-            if (target === '' || target === '~') {
-                currentPath = [];
-                return; // Success, no API call needed
-            }
-
-            if (target === '..') {
-                if (currentPath.length > 0) {
-                    currentPath.pop();
-                }
-                return; // Success, no API call needed
-            }
-
-            if (target === '.') {
-                return; // Success, no-op
-            }
-
-             if (target.includes('/')) {
-                 appendOutput(`cd: Invalid directory name '${target}'`, 'output-error');
-                 return;
-             }
-
-            // Check if target exists and is a directory via API
             const targetPath = [...currentPath, target].join('/');
             const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${targetPath}`;
-            appendOutput(`Checking path ${targetPath}...`, 'output-loading');
+            // appendOutput(`Checking path ${targetPath}...`, 'output-loading'); // Can be noisy
 
             try {
-                // We fetch the target path. If it's a directory, the API returns an array (its contents).
-                // If it's a file, it returns an object. If it doesn't exist, it throws 404.
                 const data = await fetchFromGitHub(apiUrl);
-
-                if (Array.isArray(data)) {
-                    // It's a directory, success! Update the path.
+                if (Array.isArray(data)) { // GitHub API returns array for directory contents
                     currentPath.push(target);
                 } else if (typeof data === 'object' && data.type === 'file') {
-                    // It's a file, not a directory
                     appendOutput(`bash: cd: ${target}: Not a directory`, 'output-error');
                 } else {
-                     // Unexpected response type
                      appendOutput(`bash: cd: ${target}: Not a directory or unable to access`, 'output-error');
-                     console.warn("Unexpected response for cd target:", data);
                 }
             } catch (error) {
-                 // Handle errors (like 404 Not Found)
                  if (error.message.includes('Not Found')) {
                      appendOutput(`bash: cd: ${target}: No such file or directory`, 'output-error');
                  } else {
-                      appendOutput(`cd: ${error.message}`, 'output-error'); // Display other API errors
+                      appendOutput(`cd: ${error.message}`, 'output-error');
                  }
             }
         }
 
-
-        /**
-         * Implements the 'less' command using GitHub API.
-         */
         async function showFileContent(args) {
             const filename = args[0];
-
-            if (!filename) {
-                appendOutput('less: missing filename', 'output-error');
-                return;
-            }
-            if (filename.includes('/') || filename === '..' || filename === '.') {
-                 appendOutput(`less: Invalid filename '${filename}'`, 'output-error');
-                 return;
-            }
+            if (!filename) { appendOutput('less: missing filename', 'output-error'); return; }
+            if (filename.includes('/') || filename === '..' || filename === '.') { appendOutput(`less: Invalid filename '${filename}'`, 'output-error'); return; }
 
             const targetPath = [...currentPath, filename].join('/');
             const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${targetPath}`;
-            appendOutput(`Fetching ${filename}...`, 'output-loading');
+            // appendOutput(`Fetching ${filename}...`, 'output-loading'); // Can be noisy
 
             try {
                 const data = await fetchFromGitHub(apiUrl);
-
                 if (typeof data === 'object' && data.type === 'file') {
                     if (data.encoding !== 'base64') {
-                         appendOutput(`less: Unsupported file encoding: ${data.encoding || 'unknown'}`, 'output-error');
-                         return;
+                         appendOutput(`less: Unsupported file encoding: ${data.encoding || 'unknown'}`, 'output-error'); return;
                     }
-                    // Decode base64 content
-                    const decodedContent = atob(data.content);
+                    const decodedContent = atob(data.content); // Decode base64
                     appendOutput(decodedContent, 'output-less-content');
                 } else if (Array.isArray(data) || (typeof data === 'object' && data.type === 'dir')) {
                      appendOutput(`less: ${filename}: Is a directory`, 'output-error');
                 } else {
                      appendOutput(`less: Error reading ${filename}: Unexpected API response`, 'output-error');
-                     console.warn("Unexpected response for less target:", data);
                 }
-
             } catch (error) {
                  if (error.message.includes('Not Found')) {
                      appendOutput(`less: ${filename}: No such file or directory`, 'output-error');
@@ -380,10 +297,7 @@
             }
         }
 
-        /**
-         * Implements the 'help' command.
-         */
-        function showHelp() { // This command doesn't need to be async
+        function showHelp() {
             appendOutput('Available commands:', 'output-info');
             appendOutput(`  ls              List files and directories in current path`);
             appendOutput(`  cd <dir>        Change directory (use '..' to go up, empty or '~' to go home)`);
@@ -394,51 +308,45 @@
             appendOutput(`Connected to GitHub repo: ${GITHUB_OWNER}/${GITHUB_REPO}`, 'output-info');
         }
 
-        /**
-         * Implements the 'clear' command.
-         */
-        function clearScreen() { // No need to be async
+        function clearScreen() {
             outputDiv.innerHTML = '';
         }
 
-        /**
-         * Implements the 'date' command.
-         */
-        function showDate() { // No need to be async
+        function showDate() {
             appendOutput(new Date().toString());
         }
 
         // --- Command Map ---
         const commands = {
-            'ls': listFiles, // async
-            'cd': changeDirectory, // async
-            'less': showFileContent, // async
-            'help': showHelp, // sync
-            'clear': clearScreen, // sync
-            'date': showDate, // sync
+            'ls': listFiles,
+            'cd': changeDirectory,
+            'less': showFileContent,
+            'help': showHelp,
+            'clear': clearScreen,
+            'date': showDate,
         };
-
 
         // --- Initial Setup ---
         async function initializeTerminal() {
             updatePrompt();
             updateInputArea();
-            // Optional: Perform an initial 'ls' or check root access
             try {
                 // Test connection by fetching root
                 await fetchFromGitHub(getApiUrlForCurrentPath());
                 appendOutput(`Successfully connected to ${GITHUB_OWNER}/${GITHUB_REPO}.`, 'output-info');
                 isReady = true;
                 commandInput.disabled = false;
-                focusInput();
+                // Initial focus on load
+                requestAnimationFrame(() => { // Use rAF for initial focus too
+                     focusInput();
+                });
             } catch (error) {
                  appendOutput(`Error connecting to repository: ${error.message}`, 'output-error');
                  appendOutput('Please check repository details and network connection.', 'output-error');
-                 // Keep input disabled if connection fails
             }
         }
 
-        // Add event listeners
+        // --- Event Listeners ---
         terminal.addEventListener('click', focusInput);
         commandInput.addEventListener('keydown', handleKeyDown);
         commandInput.addEventListener('input', updateInputArea);
