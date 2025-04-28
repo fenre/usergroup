@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Splunk Search Simulation</title>
+    <style>
+        /* Basic Reset & Font */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { height: 100%; }
+        body {
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 13px;
+            line-height: 1.5;
+            color: #3c444d;
+            background-color: #f6f7f8;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow: hidden;
+        }
+        a { text-decoration: none; color: #006d9c; }
+        a:hover { text-decoration: underline; }
+
+        /* --- Header Container --- */
+        header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #d9dce0;
+            flex-shrink: 0;
+        }
+
+        /* --- Main Splunk Navigation Bar --- */
+        .main-nav {
+            background-color: #2a3845; color: #cdddee; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; height: 45px; font-size: 13px;
+        }
+        .main-nav .splunk-logo {
+            font-weight: bold; font-size: 16px; color: #ffffff; display: flex; align-items: center; cursor: pointer; flex-shrink: 0;
+        }
+         .main-nav .splunk-logo .logo-enterprise-text {
+             color: #6dbf4b; margin-left: 4px; font-weight: normal;
+         }
+        .main-nav-right { display: flex; align-items: center; gap: 15px; }
+        .main-nav .nav-menu { display: flex; list-style: none; margin: 0; padding: 0; align-items: center; }
+        .main-nav .nav-menu li a { padding: 13px 5px; display: block; transition: background-color 0.2s ease, color 0.2s ease; color: #cdddee; }
+        .main-nav .nav-menu li a:hover,
+        .main-nav .nav-menu li a.active { background-color: #3c4d5b; color: #ffffff; text-decoration: none; }
+        .main-nav .user-menu { font-size: 12px; color: #cdddee; position: relative; padding: 13px 5px; cursor: pointer; }
+         .main-nav .user-menu a { color: #cdddee; }
+         .main-nav .user-menu a:hover { color: #ffffff; text-decoration: none; }
+
+        /* --- App Bar (Hidden/Collapsed) --- */
+        .app-bar { border-top: 1px solid #4a5c6d; height: 1px; overflow: hidden; padding: 0; background-color: #ffffff; }
+
+        /* --- Search App Navigation Bar --- */
+        .search-nav {
+            background-color: #f1f3f5; border-bottom: 1px solid #d9dce0; padding: 0 20px; height: 45px; display: flex; align-items: center; justify-content: space-between;
+        }
+        .search-nav .app-name { font-size: 16px; font-weight: bold; color: #000; display: flex; align-items: center; }
+        .search-nav .app-name img { width: 24px; height: 24px; margin-right: 8px; border-radius: 3px; object-fit: cover; }
+        .search-nav ul { list-style: none; margin: 0; padding: 0; display: flex; gap: 20px; }
+        .search-nav ul li a { color: #3c444d; font-weight: bold; font-size: 13px; padding: 13px 0; display: block; border-bottom: 2px solid transparent; transition: color 0.2s ease, border-color 0.2s ease; }
+        .search-nav ul li a:hover { color: #000; text-decoration: none; }
+        .search-nav ul li a.active { color: #000; border-bottom-color: #1e93c6; }
+
+        /* --- Search Bar Container --- */
+        .search-container { background-color: #ffffff; padding: 15px 20px; border-bottom: 1px solid #d9dce0; display: flex; align-items: center; gap: 15px; flex-wrap: wrap; flex-shrink: 0; }
+        .search-input-wrapper { flex-grow: 1; display: flex; border: 1px solid #ccc; border-radius: 4px; min-width: 300px; }
+        #searchInput { flex-grow: 1; border: none; padding: 8px 12px; font-size: 14px; border-radius: 4px 0 0 4px; outline: none; color: #000000; }
+        #searchInput:focus { box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 6px rgba(66, 139, 202, 0.6); }
+        .time-range-picker { background-color: #f1f3f5; border: 1px solid #ccc; border-left: none; padding: 8px 12px; font-size: 13px; color: #3c444d; cursor: pointer; white-space: nowrap; border-radius: 0 4px 4px 0; }
+        .time-range-picker:hover { background-color: #e9ecef; }
+        #searchButton { background-color: #1e93c6; color: #ffffff; border: none; padding: 9px 18px; border-radius: 4px; font-size: 14px; font-weight: bold; cursor: pointer; transition: background-color 0.2s ease; }
+        #searchButton:hover { background-color: #187aa6; }
+        #searchButton:active { background-color: #146385; }
+
+        /* --- Main Content Area --- */
+        .content-wrapper { display: flex; flex-direction: column; flex-grow: 1; overflow: hidden; }
+        .main-content { flex-grow: 1; padding: 20px; overflow-y: auto; background-color: #fff; }
+
+        /* Results Area */
+        #resultsArea { font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace; font-size: 12px; line-height: 1.6; color: #111; }
+        .result-placeholder { color: #656e77; font-style: italic; }
+        .result-event { padding: 5px 0; border-bottom: 1px dotted #eee; white-space: pre-wrap; word-break: break-all; }
+         .result-event strong { color: #006d9c; font-weight: normal; }
+
+         /* Style for index=* results */
+         .result-index-list-item {
+             padding: 3px 0;
+             color: #006d9c; cursor: pointer; text-decoration: underline;
+             position: relative; /* For positioning the toggle icon */
+         }
+         .result-index-list-item:hover { color: #005173; }
+         .result-index-list-item::before {
+             content: "\25B8"; /* Right-pointing triangle (collapsed) */
+             display: inline-block;
+             width: 1em;
+             margin-right: 5px;
+             color: #656e77;
+             text-decoration: none;
+             cursor: pointer;
+             transition: transform 0.2s ease-in-out;
+         }
+         .result-index-list-item.expanded::before {
+             transform: rotate(90deg); /* Down-pointing triangle (expanded) */
+         }
+
+         /* Style for the expanded content box */
+         .result-file-content {
+             background-color: #f8f9fa; /* Slightly off-white */
+             border: 1px solid #e0e0e0;
+             border-radius: 3px;
+             padding: 10px;
+             margin-top: 5px;
+             margin-bottom: 10px;
+             margin-left: 1.5em; /* Indent content */
+             white-space: pre-wrap;
+             word-break: break-all;
+             max-height: 300px; /* Limit height and make scrollable */
+             overflow-y: auto;
+             display: none; /* Hidden by default */
+         }
+         .result-index-list-item.expanded + .result-file-content {
+             display: block; /* Show when parent is expanded */
+         }
+
+
+        /* --- Footer --- */
+        footer { background-color: #f6f7f8; border-top: 1px solid #d9dce0; padding: 15px 20px; color: #656e77; font-size: 12px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        footer .footer-links { display: flex; gap: 15px; list-style: none; padding: 0; margin: 0; }
+        footer .footer-links a { color: #006d9c; }
+        footer .footer-links a:hover { text-decoration: underline; }
+        footer .copyright { text-align: right; }
+
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav class="main-nav">
+            <a href="#" class="splunk-logo">
+                 <span>splunk&gt;</span>
+                 <span class="logo-enterprise-text">enterprise</span>
+            </a>
+            <div class="main-nav-right">
+                <ul class="nav-menu">
+                    <li><a href="#">Settings</a></li>
+                    <li><a href="#">Activity</a></li>
+                    <li><a href="#">Messages</a></li>
+                    <li><a href="#">Find</a></li>
+                </ul>
+                <div class="user-menu">
+                    <a href="#">admin</a>
+                    <span>&#9662;</span> </div>
+            </div>
+        </nav>
+
+        <div class="app-bar"></div>
+
+        <nav class="search-nav">
+             <ul>
+                <li><a href="#" class="active">Search</a></li>
+                <li><a href="#">Pivot</a></li>
+                <li><a href="#">Reports</a></li>
+                <li><a href="#">Alerts</a></li>
+                <li><a href="#">Dashboards</a></li>
+            </ul>
+            <span class="app-name">
+                 <img src="https://ih1.redbubble.net/image.1150703383.0567/st,small,845x845-pad,1000x1000,f8f8f8.jpg"
+                      alt="App Logo"
+                      onerror="this.style.display='none'; this.parentElement.insertBefore(document.createTextNode('Logo '), this.nextSibling);" />
+                 Search & Reporting
+            </span>
+        </nav>
+    </header>
+
+    <div class="content-wrapper">
+        <div class="search-container">
+            <div class="search-input-wrapper">
+                <input type="text" id="searchInput" placeholder="Enter filename (e.g., system.log) or 'index=*' to list files...">
+                <div class="time-range-picker" title="Time range selection (not functional)">Last 24 hours</div>
+            </div>
+            <button id="searchButton">Search</button>
+        </div>
+
+        <main class="main-content">
+            <div id="resultsArea">
+                <div class="result-placeholder">Enter a filename like 'system.log' or 'web_access.log', or type 'index=*' to list all available files.</div>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <ul class="footer-links">
+            <li><a href="#">Documentation</a></li>
+            <li><a href="#">Support &amp; Services</a></li>
+            <li><a href="#">Splunk Community</a></li>
+            <li><a href="#">Splunk Answers</a></li>
+            </ul>
+        <div class="copyright">
+            Copyright &copy; <span id="current-year"></span> Splunk Inc. All rights reserved.
+        </div>
+    </footer>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultsArea = document.getElementById('resultsArea');
+        const currentYearSpan = document.getElementById('current-year');
+
+        // --- Mock File Data ---
+        const mockFileData = {
+            'system.log': `Apr 28 10:30:01 server1 systemd[1]: Starting service discovery...
+Apr 28 10:30:05 server1 kernel: [    0.000000] Linux version 5.15.0-generic
+Apr 28 10:30:10 server1 systemd[1]: Started Network Manager.
+Apr 28 10:31:00 server1 sshd[1234]: Accepted publickey for user admin from 192.168.1.100 port 56789
+Apr 28 10:31:05 server1 CRON[1250]: (root) CMD (run-parts /etc/cron.hourly)
+Apr 28 10:35:22 server1 systemd[1]: user-runtime-dir@1000.service: Succeeded.`,
+
+            'web_access.log': `192.168.1.101 - - [28/Apr/2025:10:32:15 +0200] "GET /index.html HTTP/1.1" 200 512 "-" "Mozilla/5.0"
+192.168.1.102 - admin [28/Apr/2025:10:33:01 +0200] "POST /login HTTP/1.1" 200 128 "http://example.com/login" "Mozilla/5.0"
+192.168.1.101 - - [28/Apr/2025:10:33:05 +0200] "GET /styles.css HTTP/1.1" 200 1024 "http://example.com/index.html" "Mozilla/5.0"
+192.168.1.103 - - [28/Apr/2025:10:34:50 +0200] "GET /images/logo.png HTTP/1.1" 200 4096 "http://example.com/index.html" "Mozilla/5.0"
+192.168.1.102 - admin [28/Apr/2025:10:35:11 +0200] "GET /api/data?id=123 HTTP/1.1" 404 64 "http://example.com/dashboard" "Mozilla/5.0"`,
+
+            'auth.log': `Apr 28 10:31:00 server1 sshd[1234]: Accepted publickey for user admin from 192.168.1.100 port 56789 ssh2: RSA SHA256:abc...xyz
+Apr 28 10:31:00 server1 systemd-logind[500]: New session 1 of user admin.
+Apr 28 10:40:15 server1 sshd[1234]: Received disconnect from 192.168.1.100 port 56789: 11: disconnected by user
+Apr 28 10:40:15 server1 sshd[1234]: Disconnected from user admin 192.168.1.100 port 56789
+Apr 28 10:40:15 server1 systemd-logind[500]: Session 1 logged out. Waiting for processes to exit.`
+        };
+
+        // --- Functions ---
+
+        /**
+         * Displays the content of a specific mock file directly, without clearing results.
+         * Used when clicking a filename link.
+         * @param {string} filename - The key (filename) in mockFileData to display.
+         */
+        function displayFileContentInline(filename, listItemElement) {
+            // Check if content is already displayed for this item
+            const existingContent = listItemElement.nextElementSibling;
+            if (existingContent && existingContent.classList.contains('result-file-content')) {
+                // Content exists, remove it (toggle off)
+                existingContent.remove();
+                listItemElement.classList.remove('expanded');
+            } else {
+                 // Content doesn't exist, create and insert it
+                if (mockFileData.hasOwnProperty(filename)) {
+                    const fileContent = mockFileData[filename];
+                    const contentDiv = document.createElement('pre'); // Use <pre> for better formatting
+                    contentDiv.className = 'result-file-content';
+                    contentDiv.textContent = fileContent; // Safely sets text content
+
+                    // Insert the content div right after the clicked list item
+                    listItemElement.parentNode.insertBefore(contentDiv, listItemElement.nextSibling);
+                    listItemElement.classList.add('expanded'); // Add class to change arrow icon
+                } else {
+                     console.error(`Content for ${filename} not found in mockFileData.`);
+                     // Optionally display an error message inline
+                }
+            }
+        }
+
+        /**
+         * Displays the content of a specific mock file, clearing previous results.
+         * Used when searching directly for a filename.
+         * @param {string} filename - The key (filename) in mockFileData to display.
+         */
+        function displayFileContentExclusive(filename) {
+            resultsArea.innerHTML = ''; // Clear previous results
+
+            if (mockFileData.hasOwnProperty(filename)) {
+                const fileContent = mockFileData[filename];
+                const headerDiv = document.createElement('div');
+                headerDiv.innerHTML = `Displaying content for <strong>${escapeHtml(filename)}</strong>:`;
+                headerDiv.style.marginBottom = '10px';
+                headerDiv.style.fontWeight = 'bold';
+                resultsArea.appendChild(headerDiv);
+
+                const lines = fileContent.split('\n');
+                lines.forEach((line) => {
+                    const eventDiv = document.createElement('div');
+                    eventDiv.className = 'result-event';
+                    eventDiv.textContent = line;
+                    resultsArea.appendChild(eventDiv);
+                });
+            } else {
+                resultsArea.innerHTML = `<div class="result-placeholder">Error: Could not find content for ${escapeHtml(filename)}.</div>`;
+            }
+        }
+
+
+        /**
+         * Performs the search based on the input query.
+         */
+        function performSearch() {
+            const query = searchInput.value.trim();
+            resultsArea.innerHTML = ''; // Clear previous results
+
+            if (!query) {
+                resultsArea.innerHTML = '<div class="result-placeholder">Please enter a filename or \'index=*\'.</div>';
+                return;
+            }
+
+            // Check for the special 'index=*' command
+            if (query === 'index=*') {
+                const headerDiv = document.createElement('div');
+                headerDiv.innerHTML = `Available files (click to expand/collapse):`; // Updated header
+                headerDiv.style.marginBottom = '10px';
+                headerDiv.style.fontWeight = 'bold';
+                resultsArea.appendChild(headerDiv);
+
+                const fileNames = Object.keys(mockFileData);
+
+                if (fileNames.length > 0) {
+                    fileNames.sort(); // Sort filenames alphabetically
+                    fileNames.forEach(fileName => {
+                        const fileDiv = document.createElement('div');
+                        fileDiv.className = 'result-index-list-item';
+                        // Create a text node for the filename itself to avoid issues with event listeners on the pseudo-element
+                        const fileNameText = document.createTextNode(fileName);
+                        fileDiv.appendChild(fileNameText);
+
+                        // Add click listener to the list item div
+                        fileDiv.addEventListener('click', (event) => {
+                            // Prevent clicks on the pseudo-element from triggering if needed,
+                            // but usually clicking anywhere on the div is fine.
+                            displayFileContentInline(fileName, fileDiv); // Pass the element itself
+                        });
+                        resultsArea.appendChild(fileDiv);
+                    });
+                } else {
+                     resultsArea.innerHTML = '<div class="result-placeholder">No mock files defined.</div>';
+                }
+
+            // If not 'index=*', proceed with filename lookup (exclusive display)
+            } else if (mockFileData.hasOwnProperty(query)) {
+                displayFileContentExclusive(query);
+            } else {
+                // File not found
+                resultsArea.innerHTML = `<div class="result-placeholder">No content found for filename: <strong>${escapeHtml(query)}</strong>. Try 'system.log', 'web_access.log', 'auth.log', or 'index=*'.</div>`;
+            }
+        }
+
+        function escapeHtml(unsafe) {
+            if (!unsafe) return '';
+            return unsafe
+                 .replace(/&/g, "&amp;")
+                 .replace(/</g, "&lt;")
+                 .replace(/>/g, "&gt;")
+                 .replace(/"/g, "&quot;")
+                 .replace(/'/g, "&#039;");
+        }
+
+        // Set current year in footer
+        if (currentYearSpan) {
+            currentYearSpan.textContent = new Date().getFullYear();
+        }
+
+        // --- Event Listeners ---
+        searchButton.addEventListener('click', performSearch);
+        searchInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                performSearch();
+            }
+        });
+
+        searchInput.focus();
+
+    </script>
+
+</body>
+</html>
