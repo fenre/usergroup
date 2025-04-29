@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Terminal - fenre/usergroup</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        /* Basic Reset */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body { height: 100%; background-color: #000000; color: #ffffff; font-family: 'Roboto Mono', monospace; font-size: 14px; line-height: 1.4; }
+        .terminal { height: 100%; padding: 15px; overflow-y: auto; cursor: text; display: flex; flex-direction: column; }
+        #output { flex-grow: 1; white-space: pre-wrap; word-break: break-all; }
+        .input-line { display: flex; align-items: center; }
+        .prompt { margin-right: 8px; flex-shrink: 0; white-space: nowrap; }
+        .prompt-user { color: #00ff00; }
+        .prompt-colon { color: #ffffff; }
+        .prompt-path { color: #7aa2f7; }
+        .prompt-dollar { color: #ffffff; }
+        .input-area-container { position: relative; flex-grow: 1; display: flex; align-items: center; min-width: 1px; white-space: pre; flex-wrap: wrap; }
+        #beforeCursor, #afterCursor { display: inline; outline: none; }
+        #commandInput { position: absolute; top: 0; left: 0; width: 100%; height: 100%; opacity: 0; cursor: text; border: none; background: transparent; color: transparent; caret-color: transparent; padding: 0; margin: 0; font: inherit; white-space: pre; }
+        .cursor { display: inline-block; background-color: #ffffff; width: 8px; height: 1.4em; vertical-align: middle; animation: blink 1s step-end infinite; order: 1; flex-shrink: 0; }
+        #commandInput:not(:focus) + .cursor { animation: none; opacity: 0.5; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0; } }
+        /* Output Formatting */
+        .output-command { color: #ffffff; }
+        .output-ls-dir { color: #7aa2f7; font-weight: bold; }
+        .output-ls-file { color: #ffffff; }
+        .output-ls span { display: inline-block; margin-right: 15px; }
+        .output-error { color: #f7768e; }
+        .output-info { color: #e0af68; }
+        .output-loading { color: #e0af68; font-style: italic; }
+        .output-less-content { color: #bb9af7; border-top: 1px dashed #414868; border-bottom: 1px dashed #414868; margin-top: 5px; margin-bottom: 5px; padding-top: 5px; padding-bottom: 5px; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+
+    <div id="terminal" class="terminal" onclick="focusInput()">
+        <div id="output">
+            <div class="output-info">Connecting to Oslo Splunk User Group Docs. Type 'help' for commands.</div>
+        </div>
+        <div class="input-line">
+            <span id="prompt" class="prompt"></span>
+            <div class="input-area-container">
+                <span id="beforeCursor"></span>
+                <span class="cursor"></span>
+                <span id="afterCursor"></span>
+                <input type="text" id="commandInput" spellcheck="false" autocomplete="off" autocapitalize="none" autofocus disabled>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const terminal = document.getElementById('terminal');
+        const outputDiv = document.getElementById('output');
+        const beforeCursorSpan = document.getElementById('beforeCursor');
+        const afterCursorSpan = document.getElementById('afterCursor');
+        const commandInput = document.getElementById('commandInput');
+        const cursorElement = document.querySelector('.cursor');
+        const promptElement = document.getElementById('prompt');
+
+        // --- GitHub API Configuration ---
+        const GITHUB_OWNER = 'fenre';
+        const GITHUB_REPO = 'usergroup';
+        const GITHUB_API_BASE = 'https://api.github.com';
+        const GITHUB_HEADERS = {
+            'Accept': 'application/vnd.github.v3+json',
+        };
+
+        // --- State ---
+        let currentPath = [];
+        let isReady = false;
+
+        // --- Utility Functions ---
+
+        function getApiUrlForCurrentPath() {
+            const pathString = currentPath.join('/');
+            return `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${pathString}`;
+        }
+
+        async function fetchFromGitHub(url) {
+            try {
+                const response = await fetch(url, { headers: GITHUB_HEADERS });
+                if (!response.ok) {
+                    if (response.status === 404) {
+                        throw new Error(`Not Found: ${url.replace(GITHUB_API_BASE,'')}`);
+                    } else if (response.status === 403) {
+                         const rateLimitInfo = `Rate limit: ${response.headers.get('X-RateLimit-Limit')}, Remaining: ${response.headers.get('X-RateLimit-Remaining')}`;
+                         console.warn('Rate limit likely exceeded.', await response.json());
+                         throw new Error(`API request forbidden (check rate limits or token permissions). ${rateLimitInfo}`);
+                    }
+                    throw new Error(`GitHub API Error: ${response.status} ${response.statusText}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Fetch error:', error);
+                throw error;
+            }
+        }
+
+        function updatePrompt() {
+            const pathString = currentPath.length === 0 ? '~' : `~/${currentPath.join('/')}`;
+            promptElement.innerHTML = `<span class="prompt-user">guest@${GITHUB_REPO}</span><span class="prompt-colon">:</span><span class="prompt-path">${pathString}</span><span class="prompt-dollar">$</span>`;
+        }
+
+        // --- Core Terminal Functions ---
+
+        function focusInput() {
+            if (isReady) {
+                 commandInput.focus();
+            }
+            // Call updateInputArea to ensure cursor visibility/position is correct on focus
+            updateInputArea();
+        }
+
+        function updateInputArea() {
+            const value = commandInput.value;
+            const selectionStart = commandInput.selectionStart;
+            beforeCursorSpan.textContent = value.substring(0, selectionStart);
+            afterCursorSpan.textContent = value.substring(selectionStart);
+            // No need to scroll here, scroll after output/command processing
+        }
+
+        function handleKeyDown(event) {
+             if (!isReady) return;
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                processCommand();
+            }
+        }
+
+        async function processCommand() {
+            if (!isReady) return;
+
+            const fullCommand = commandInput.value.trim();
+            const pathString = currentPath.length === 0 ? '~' : `~/${currentPath.join('/')}`;
+            const promptForEcho = `guest@${GITHUB_REPO}:${pathString}$`;
+            appendOutput(`${promptForEcho} ${fullCommand}`, 'output-command');
+
+            // Disable input while processing
+            isReady = false;
+            commandInput.disabled = true;
+            setLoadingState(true);
+
+            if (fullCommand) {
+                const args = fullCommand.split(' ');
+                const command = args[0].toLowerCase();
+
+                if (commands[command]) {
+                    try {
+                        await commands[command](args.slice(1));
+                    } catch (error) {
+                        appendOutput(`${error.message || 'Command failed'}`, 'output-error');
+                    }
+                } else {
+                    appendOutput(`bash: command not found: ${command}`, 'output-error');
+                }
+            }
+
+            // Re-enable input and cleanup
+            commandInput.value = '';
+            updateInputArea(); // Clear visual input
+            updatePrompt(); // Update prompt if cd was used
+            isReady = true;
+            commandInput.disabled = false;
+            setLoadingState(false);
+            scrollToBottom();
+
+            // *** ADDED: Explicitly refocus the input field ***
+            // Use requestAnimationFrame to ensure focus happens after potential DOM updates
+            requestAnimationFrame(() => {
+                focusInput();
+            });
+        }
+
+        function setLoadingState(isLoading) {
+             terminal.style.cursor = isLoading ? 'wait' : 'text';
+        }
+
+        function appendOutput(text, className = '') {
+            const newLine = document.createElement('div');
+            if (className) {
+                newLine.className = className;
+            }
+            newLine.textContent = text;
+            outputDiv.appendChild(newLine);
+        }
+
+        function scrollToBottom() {
+            // Only scroll if the user is near the bottom
+            const isScrolledToBottom = terminal.scrollHeight - terminal.clientHeight <= terminal.scrollTop + 15; // Increased tolerance slightly
+            if(isScrolledToBottom) {
+                 terminal.scrollTop = terminal.scrollHeight;
+            }
+        }
+
+        // --- Command Implementations (Async where needed) ---
+
+        async function listFiles() {
+            const apiUrl = getApiUrlForCurrentPath();
+            // Find and remove previous loading messages for 'ls' if any (optional enhancement)
+            // appendOutput(`Fetching ${apiUrl.replace(GITHUB_API_BASE,'')}...`, 'output-loading');
+            try {
+                const data = await fetchFromGitHub(apiUrl);
+                if (!Array.isArray(data)) {
+                     appendOutput('Error: Expected directory listing.', 'output-error');
+                     return;
+                }
+                if (data.length === 0) return; // Empty dir
+
+                const lsOutputContainer = document.createElement('div');
+                lsOutputContainer.className = 'output-ls';
+                 data.sort((a, b) => {
+                    if (a.type === b.type) return a.name.localeCompare(b.name);
+                    return a.type === 'dir' ? -1 : 1;
+                 });
+                data.forEach(item => {
+                    const itemSpan = document.createElement('span');
+                    if (item.type === 'dir') {
+                        itemSpan.className = 'output-ls-dir';
+                        itemSpan.textContent = item.name + '/';
+                    } else if (item.type === 'file') {
+                        itemSpan.className = 'output-ls-file';
+                        itemSpan.textContent = item.name;
+                    } else {
+                        itemSpan.textContent = item.name + ` (${item.type})`;
+                    }
+                    lsOutputContainer.appendChild(itemSpan);
+                });
+                outputDiv.appendChild(lsOutputContainer);
+            } catch (error) {
+                appendOutput(`ls: ${error.message}`, 'output-error');
+            }
+        }
+
+        async function changeDirectory(args) {
+            const target = args[0] || '';
+            if (target === '' || target === '~') { currentPath = []; return; }
+            if (target === '..') { if (currentPath.length > 0) currentPath.pop(); return; }
+            if (target === '.') { return; }
+            if (target.includes('/')) { appendOutput(`cd: Invalid directory name '${target}'`, 'output-error'); return; }
+
+            const targetPath = [...currentPath, target].join('/');
+            const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${targetPath}`;
+            // appendOutput(`Checking path ${targetPath}...`, 'output-loading'); // Can be noisy
+
+            try {
+                const data = await fetchFromGitHub(apiUrl);
+                if (Array.isArray(data)) { // GitHub API returns array for directory contents
+                    currentPath.push(target);
+                } else if (typeof data === 'object' && data.type === 'file') {
+                    appendOutput(`bash: cd: ${target}: Not a directory`, 'output-error');
+                } else {
+                     appendOutput(`bash: cd: ${target}: Not a directory or unable to access`, 'output-error');
+                }
+            } catch (error) {
+                 if (error.message.includes('Not Found')) {
+                     appendOutput(`bash: cd: ${target}: No such file or directory`, 'output-error');
+                 } else {
+                      appendOutput(`cd: ${error.message}`, 'output-error');
+                 }
+            }
+        }
+
+        async function showFileContent(args) {
+            const filename = args[0];
+            if (!filename) { appendOutput('less: missing filename', 'output-error'); return; }
+            if (filename.includes('/') || filename === '..' || filename === '.') { appendOutput(`less: Invalid filename '${filename}'`, 'output-error'); return; }
+
+            const targetPath = [...currentPath, filename].join('/');
+            const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${targetPath}`;
+            // appendOutput(`Fetching ${filename}...`, 'output-loading'); // Can be noisy
+
+            try {
+                const data = await fetchFromGitHub(apiUrl);
+                if (typeof data === 'object' && data.type === 'file') {
+                    if (data.encoding !== 'base64') {
+                         appendOutput(`less: Unsupported file encoding: ${data.encoding || 'unknown'}`, 'output-error'); return;
+                    }
+                    const decodedContent = atob(data.content); // Decode base64
+                    appendOutput(decodedContent, 'output-less-content');
+                } else if (Array.isArray(data) || (typeof data === 'object' && data.type === 'dir')) {
+                     appendOutput(`less: ${filename}: Is a directory`, 'output-error');
+                } else {
+                     appendOutput(`less: Error reading ${filename}: Unexpected API response`, 'output-error');
+                }
+            } catch (error) {
+                 if (error.message.includes('Not Found')) {
+                     appendOutput(`less: ${filename}: No such file or directory`, 'output-error');
+                 } else {
+                      appendOutput(`less: ${error.message}`, 'output-error');
+                 }
+            }
+        }
+
+        function showHelp() {
+            appendOutput('Available commands:', 'output-info');
+            appendOutput(`  ls              List files and directories in current path`);
+            appendOutput(`  cd <dir>        Change directory (use '..' to go up, empty or '~' to go home)`);
+            appendOutput(`  less <filename> View file content`);
+            appendOutput(`  help            Show this help message`);
+            appendOutput(`  clear           Clear the terminal screen`);
+            appendOutput(`  date            Show the current date and time`);
+            appendOutput(`Connected to GitHub repo: ${GITHUB_OWNER}/${GITHUB_REPO}`, 'output-info');
+        }
+
+        function clearScreen() {
+            outputDiv.innerHTML = '';
+        }
+
+        function showDate() {
+            appendOutput(new Date().toString());
+        }
+
+        // --- Command Map ---
+        const commands = {
+            'ls': listFiles,
+            'cd': changeDirectory,
+            'less': showFileContent,
+            'help': showHelp,
+            'clear': clearScreen,
+            'date': showDate,
+        };
+
+        // --- Initial Setup ---
+        async function initializeTerminal() {
+            updatePrompt();
+            updateInputArea();
+            try {
+                // Test connection by fetching root
+                await fetchFromGitHub(getApiUrlForCurrentPath());
+                appendOutput(`Successfully connected to ${GITHUB_OWNER}/${GITHUB_REPO}.`, 'output-info');
+                isReady = true;
+                commandInput.disabled = false;
+                // Initial focus on load
+                requestAnimationFrame(() => { // Use rAF for initial focus too
+                     focusInput();
+                });
+            } catch (error) {
+                 appendOutput(`Error connecting to repository: ${error.message}`, 'output-error');
+                 appendOutput('Please check repository details and network connection.', 'output-error');
+            }
+        }
+
+        // --- Event Listeners ---
+        terminal.addEventListener('click', focusInput);
+        commandInput.addEventListener('keydown', handleKeyDown);
+        commandInput.addEventListener('input', updateInputArea);
+        commandInput.addEventListener('keyup', updateInputArea);
+        commandInput.addEventListener('mouseup', updateInputArea);
+        commandInput.addEventListener('focus', updateInputArea);
+        commandInput.addEventListener('blur', updateInputArea);
+
+        // Start the initialization
+        initializeTerminal();
+
+    </script>
+
+</body>
+</html>
