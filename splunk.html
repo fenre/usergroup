@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Oslo Splunk User Group</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
     <style>
         /* Basic Reset & Font */
         *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -73,37 +74,72 @@
          .result-event strong { color: #006d9c; font-weight: normal; }
 
          /* Style for index=* list items (common container) */
-         .result-list-item-container {
-             padding: 3px 0;
-             position: relative;
-         }
+         .result-list-item-container { padding: 3px 0; position: relative; }
 
          /* Style for clickable FILES in index=* results */
-         .result-index-list-file {
-             color: #006d9c; cursor: pointer; text-decoration: underline;
-         }
+         .result-index-list-file { color: #006d9c; cursor: pointer; text-decoration: underline; }
          .result-index-list-file:hover { color: #005173; }
-         .result-index-list-file::before {
-             content: "\25B8"; /* Right-pointing triangle */
-             display: inline-block; width: 1em; margin-right: 5px; color: #656e77; text-decoration: none; cursor: pointer; transition: transform 0.2s ease-in-out;
-         }
+         .result-index-list-file::before { content: "\25B8"; display: inline-block; width: 1em; margin-right: 5px; color: #656e77; text-decoration: none; cursor: pointer; transition: transform 0.2s ease-in-out; }
          .result-index-list-file.expanded::before { transform: rotate(90deg); }
 
          /* Style for non-clickable DIRECTORIES in index=* results */
-         .result-index-list-dir {
-             color: #3c444d; /* Default text color */
-             cursor: default;
-             font-weight: bold; /* Make directories bold */
-         }
-         .result-index-list-dir::before {
-             content: ""; /* No icon/prefix needed, or use a specific one like folder emoji */
-             display: inline-block; width: 1em; margin-right: 5px; /* Keep alignment */
-         }
-
+         .result-index-list-dir { color: #3c444d; cursor: default; font-weight: bold; }
+         .result-index-list-dir::before { content: ""; display: inline-block; width: 1em; margin-right: 5px; }
 
          /* Style for the expanded content box */
-         .result-file-content { background-color: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 3px; padding: 10px; margin-top: 5px; margin-bottom: 10px; margin-left: 1.5em; white-space: pre-wrap; word-break: break-all; max-height: 300px; overflow-y: auto; display: none; }
-         .result-index-list-file.expanded + .result-file-content { display: block; } /* Show only after expanded FILES */
+         .result-file-content {
+             background-color: #f8f9fa; border: 1px solid #e0e0e0; border-radius: 3px; padding: 10px; margin-top: 5px; margin-bottom: 10px; margin-left: 1.5em; white-space: pre-wrap; word-break: break-all; max-height: 400px; /* Increased max height */ overflow-y: auto; display: none;
+             /* Reset font for Markdown content */
+             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+             font-size: 13px;
+             line-height: 1.5;
+             color: #3c444d;
+         }
+         .result-index-list-file.expanded + .result-file-content { display: block; }
+
+         /* Basic styles for Markdown elements inside content box */
+         .result-file-content h1,
+         .result-file-content h2,
+         .result-file-content h3 { margin-top: 1em; margin-bottom: 0.5em; line-height: 1.3; color: #000; }
+         .result-file-content h1 { font-size: 1.6em; }
+         .result-file-content h2 { font-size: 1.4em; }
+         .result-file-content h3 { font-size: 1.2em; }
+         .result-file-content p { margin-bottom: 0.8em; }
+         .result-file-content ul,
+         .result-file-content ol { margin-left: 2em; margin-bottom: 0.8em; }
+         .result-file-content li { margin-bottom: 0.3em; }
+         .result-file-content code {
+             font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+             background-color: #e9ecef;
+             padding: 0.1em 0.4em;
+             border-radius: 3px;
+             font-size: 0.9em;
+         }
+         .result-file-content pre {
+             background-color: #e9ecef;
+             padding: 10px;
+             border-radius: 3px;
+             overflow-x: auto; /* Allow horizontal scroll for code blocks */
+             margin-bottom: 0.8em;
+         }
+         .result-file-content pre code {
+             background-color: transparent;
+             padding: 0;
+             border-radius: 0;
+             font-size: 1em; /* Use pre's font size */
+         }
+         .result-file-content blockquote {
+             border-left: 3px solid #ccc;
+             padding-left: 1em;
+             margin-left: 0;
+             margin-bottom: 0.8em;
+             color: #656e77;
+         }
+         .result-file-content table { border-collapse: collapse; margin-bottom: 1em; width: auto; }
+         .result-file-content th,
+         .result-file-content td { border: 1px solid #ccc; padding: 6px 10px; }
+         .result-file-content th { background-color: #f1f3f5; font-weight: bold; }
+
 
         /* --- Footer --- */
         footer { background-color: #f6f7f8; border-top: 1px solid #d9dce0; padding: 15px 20px; color: #656e77; font-size: 12px; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
@@ -157,7 +193,7 @@
     <div class="content-wrapper">
         <div class="search-container">
             <div class="search-input-wrapper">
-                <input type="text" id="searchInput" placeholder="Enter filename or 'index=*' ...">
+                 <input type="text" id="searchInput" placeholder="Enter filename, 'index=*', 'index=* docs', or 'index=* events'...">
                 <div class="time-range-picker" title="Time range selection (not functional)">Last 24 hours</div>
             </div>
             <button id="searchButton">Search</button>
@@ -165,7 +201,7 @@
 
         <main class="main-content">
             <div id="resultsArea">
-                 <div class="result-placeholder">Enter a command, 'index=*', or 'index=* docs'.</div>
+                 <div class="result-placeholder">Enter a filename, 'index=*' (root), 'index=* docs', or 'index=* events'.</div>
             </div>
         </main>
     </div>
@@ -239,21 +275,17 @@
                 existingContent.remove();
                 listItemElement.classList.remove('expanded');
             } else {
-                // Close any other expanded items in the same list (optional)
                 const parent = listItemElement.parentNode;
                 parent.querySelectorAll('.result-index-list-file.expanded').forEach(el => {
                     if (el !== listItemElement) {
                         const content = el.nextElementSibling;
-                        if (content && content.classList.contains('result-file-content')) {
-                            content.remove();
-                        }
+                        if (content && content.classList.contains('result-file-content')) { content.remove(); }
                         el.classList.remove('expanded');
                     }
                 });
 
-
                 const loadingDiv = document.createElement('div');
-                loadingDiv.className = 'result-file-content'; // Use same class for spacing
+                loadingDiv.className = 'result-file-content';
                 loadingDiv.textContent = 'Loading content...';
                 loadingDiv.style.display = 'block';
                 loadingDiv.style.fontStyle = 'italic';
@@ -265,7 +297,7 @@
                 const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${fullPath}`;
                 try {
                     const data = await fetchFromGitHub(apiUrl);
-                    loadingDiv.remove(); // Remove loading indicator
+                    loadingDiv.remove();
 
                     if (typeof data === 'object' && data.type === 'file') {
                         if (data.encoding !== 'base64') { throw new Error(`Unsupported encoding: ${data.encoding}`); }
@@ -273,26 +305,46 @@
                         try { decodedContent = atob(data.content); }
                         catch (e) { throw new Error("Error decoding file content."); }
 
-                        const contentDiv = document.createElement('pre');
+                        const contentDiv = document.createElement('div'); // Use DIV for Markdown HTML
                         contentDiv.className = 'result-file-content';
-                        contentDiv.textContent = decodedContent;
-                        contentDiv.style.display = 'block'; // Ensure visible
+
+                        // *** Check if it's a Markdown file ***
+                        if (filename.toLowerCase().endsWith('.md')) {
+                            // Use marked.js to render Markdown to HTML
+                            // Ensure marked is loaded (check if window.marked exists)
+                            if (window.marked) {
+                                // Use marked's sanitize option if possible (depending on version)
+                                // Or consider a separate sanitizer like DOMPurify for robustness
+                                contentDiv.innerHTML = marked.parse(decodedContent, { breaks: true, gfm: true }); // Enable GitHub Flavored Markdown & line breaks
+                            } else {
+                                console.error("marked.js library not loaded.");
+                                contentDiv.textContent = `Error: Markdown library not loaded.\n\n${decodedContent}`; // Fallback
+                            }
+                        } else {
+                            // For non-Markdown, display as plain text in a <pre> tag
+                            const pre = document.createElement('pre');
+                            pre.textContent = decodedContent;
+                            contentDiv.appendChild(pre);
+                        }
+
+                        contentDiv.style.display = 'block';
                         listItemElement.parentNode.insertBefore(contentDiv, listItemElement.nextSibling);
 
                     } else { throw new Error(`'${escapeHtml(filename)}' is not a file.`); }
                 } catch (error) {
-                    loadingDiv.remove(); // Remove loading on error too
+                    loadingDiv.remove();
                     const errorDiv = document.createElement('div');
                     errorDiv.className = 'result-file-content';
                     errorDiv.textContent = `Error loading ${escapeHtml(filename)}: ${error.message}`;
                     errorDiv.style.display = 'block';
                     errorDiv.style.color = '#f7768e';
                     listItemElement.parentNode.insertBefore(errorDiv, listItemElement.nextSibling);
-                    // Keep expanded state to show error
                 }
             }
         }
 
+        // This function remains largely the same, but could also incorporate Markdown rendering
+        // if you want direct searches for .md files to render as HTML too.
         async function displayFileContentExclusive(filename) {
             resultsArea.innerHTML = `<div class="result-loading">Fetching ${escapeHtml(filename)}...</div>`;
             const apiUrl = `${GITHUB_API_BASE}/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${filename}`;
@@ -313,13 +365,27 @@
                     headerDiv.style.fontWeight = 'bold';
                     resultsArea.appendChild(headerDiv);
 
-                    const lines = decodedContent.split('\n');
-                    lines.forEach((line) => {
-                        const eventDiv = document.createElement('div');
-                        eventDiv.className = 'result-event';
-                        eventDiv.textContent = line;
-                        resultsArea.appendChild(eventDiv);
-                    });
+                    // *** Check if it's Markdown for exclusive view ***
+                    if (filename.toLowerCase().endsWith('.md')) {
+                        const contentDiv = document.createElement('div');
+                        contentDiv.className = 'result-event'; // Use existing class or a new one
+                         if (window.marked) {
+                            contentDiv.innerHTML = marked.parse(decodedContent, { breaks: true, gfm: true });
+                         } else {
+                             console.error("marked.js library not loaded.");
+                             contentDiv.textContent = `Error: Markdown library not loaded.\n\n${decodedContent}`;
+                         }
+                         resultsArea.appendChild(contentDiv);
+                    } else {
+                        // Display non-Markdown as plain text lines
+                        const lines = decodedContent.split('\n');
+                        lines.forEach((line) => {
+                            const eventDiv = document.createElement('div');
+                            eventDiv.className = 'result-event';
+                            eventDiv.textContent = line;
+                            resultsArea.appendChild(eventDiv);
+                        });
+                    }
 
                 } else if (Array.isArray(data) || (typeof data === 'object' && data.type === 'dir')) {
                      throw new Error(`${escapeHtml(filename)} is a directory.`);
@@ -332,10 +398,6 @@
         }
 
 
-        /**
-         * Lists files AND directories from a specific path in the GitHub repository.
-         * @param {string} [repoPath=''] - The path within the repo. Defaults to root.
-         */
         async function listRepoFiles(repoPath = '') {
              const displayPath = repoPath || 'root';
              resultsArea.innerHTML = `<div class="result-loading">Fetching list from /${displayPath}...</div>`;
@@ -343,52 +405,46 @@
 
              try {
                  const data = await fetchFromGitHub(apiUrl);
-                 resultsArea.innerHTML = ''; // Clear loading
+                 resultsArea.innerHTML = '';
 
                  if (!Array.isArray(data)) {
                       throw new Error(`Error: Could not retrieve listing for /${repoPath}`);
                  }
 
                  const headerDiv = document.createElement('div');
-                 headerDiv.innerHTML = `Contents of /${displayPath}:`; // Updated header
+                 headerDiv.innerHTML = `Contents of /${displayPath}:`;
                  headerDiv.style.marginBottom = '10px';
                  headerDiv.style.fontWeight = 'bold';
                  resultsArea.appendChild(headerDiv);
 
-                 // Separate files and directories
-                 const items = data; // No pre-filtering needed
-                 items.sort((a, b) => { // Sort: dirs first, then alphabetically
+                 const items = data;
+                 items.sort((a, b) => {
                     if (a.type === b.type) { return a.name.localeCompare(b.name); }
                     return a.type === 'dir' ? -1 : 1;
                  });
 
                  if (items.length > 0) {
                      items.forEach(item => {
-                         const itemContainer = document.createElement('div'); // Container for item + potential content
+                         const itemContainer = document.createElement('div');
                          itemContainer.className = 'result-list-item-container';
-
-                         const itemDiv = document.createElement('div'); // The visible list item
-                         const itemNameText = document.createTextNode(item.name + (item.type === 'dir' ? '/' : '')); // Add slash to dirs
+                         const itemDiv = document.createElement('div');
+                         const itemNameText = document.createTextNode(item.name + (item.type === 'dir' ? '/' : ''));
 
                          if (item.type === 'file') {
-                             itemDiv.className = 'result-index-list-file'; // Clickable file style
+                             itemDiv.className = 'result-index-list-file';
                              itemDiv.appendChild(itemNameText);
-                             // Add click listener ONLY for files
                              itemDiv.addEventListener('click', () => {
                                  displayFileContentInline(item.name, itemDiv, repoPath);
                              });
                          } else if (item.type === 'dir') {
-                             itemDiv.className = 'result-index-list-dir'; // Non-clickable dir style
+                             itemDiv.className = 'result-index-list-dir';
                              itemDiv.appendChild(itemNameText);
-                             // No click listener for directories
                          } else {
-                             // Handle other types like symlinks if needed
                              itemDiv.textContent = `${item.name} (${item.type})`;
-                             itemDiv.style.color = '#aaa'; // Grey out unknown types
+                             itemDiv.style.color = '#aaa';
                          }
-
-                         itemContainer.appendChild(itemDiv); // Add styled item to container
-                         resultsArea.appendChild(itemContainer); // Add container to results
+                         itemContainer.appendChild(itemDiv);
+                         resultsArea.appendChild(itemContainer);
                      });
                  } else {
                       resultsArea.appendChild(document.createTextNode(`Directory /${displayPath} is empty.`));
@@ -404,9 +460,6 @@
         }
 
 
-        /**
-         * Performs the search based on the input query.
-         */
         async function performSearch() {
             const query = searchInput.value.trim().toLowerCase();
 
@@ -415,11 +468,14 @@
                 return;
             }
 
-            if (query === 'index=* docs') {
+            if (query === 'index=* events') {
+                await listRepoFiles('events');
+            } else if (query === 'index=* docs') {
                 await listRepoFiles('docs');
             } else if (query === 'index=*') {
                 await listRepoFiles('');
-            } else {
+            }
+            else {
                 await displayFileContentExclusive(query);
             }
         }
